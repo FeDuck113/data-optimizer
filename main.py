@@ -1,4 +1,4 @@
-import config
+import config as c
 import sys
 
 def calculate_variance(data):
@@ -34,7 +34,7 @@ def cochrans_test(variances):    #добавить рассчёт дисперс
 
 def F_test(data, means, exp_variance):
     n_exp = len(data)
-    n_param = len(data[0])
+    n_param = len(data[0]) - 1
 
     f = n_exp * n_param - n_exp     #число степеней свободы
 
@@ -48,19 +48,39 @@ def F_test(data, means, exp_variance):
 
     return F
 
+def calculate_regression_coefficients(data):
+    n_exp = len(data)
+    n_param = len(data[0]) - 1
 
-a = [[3, 9, 7, 67], [1, 7, 5, 12], [10, 17, 25, 800]]
+    regression_coefficients = list()
+    for i in range(n_param):
+        numerator = sum(data[j][-1]*data[j][i] for j in range(n_exp))
+        denominator = sum(data[j][i] ** 2 for j in range(n_exp))
+
+        regression_coefficients.append(numerator/denominator)
+
+    return regression_coefficients
+
+
+data = [[3, 9, 7, 67], [1, 7, 5, 12], [10, 17, 25, 800]]
 
 
 
-variances, means = calculate_variance(a)
+variances, means = calculate_variance(data)
 G, exp_variance = cochrans_test(variances)
-print(G, exp_variance)
 
-if G > config.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
+if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
+    print(f'The dispersion is non-uniform. G = {G}')
     sys.exit()
 
-F_test(a, means, exp_variance)
+F = F_test(data, means, exp_variance)
+if F > c.F_STANDART:
+    print(f'F is more than the table value. F = {F}')
+    sys.exit()
+
+regression_coefficients = calculate_regression_coefficients(data)
+
+
 
 
 
