@@ -48,6 +48,7 @@ def F_test(data, means, exp_variance):
 
     return F
 
+#расчёт коэффициентов регрессии
 def calculate_regression_coefficients(data):
     n_exp = len(data)
     n_param = len(data[0]) - 1
@@ -61,25 +62,44 @@ def calculate_regression_coefficients(data):
 
     return regression_coefficients
 
+def linear_regression(data, coefficients):
+    predicted_result = coefficients[0]
+    for i in range(len(data)):
+        predicted_result += coefficients[i + 1] * data[i]
+    return predicted_result
 
-data = [[3, 9, 7, 67], [1, 7, 5, 12], [10, 17, 25, 800]]
+
+def calculate_coefficients(data):
+    variances, means = calculate_variance(data)
+    G, exp_variance = cochrans_test(variances)
+
+    if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
+        print(f'The dispersion is non-uniform. G = {G}')
+        sys.exit()
+
+    F = F_test(data, means, exp_variance)
+    if F > c.F_STANDART:
+        print(f'F is more than the table value. F = {F}')
+        sys.exit()
+
+    regression_coefficients = calculate_regression_coefficients(data)
+
+    return regression_coefficients
 
 
+if c.CALCULATE_COEFFICIENTS:
+    coef = calculate_coefficients(c.EXP_DATA)
+    with open(c.COEF_FILE, 'w') as f:
+        f.write(str(coef))
+    f.close()
 
-variances, means = calculate_variance(data)
-G, exp_variance = cochrans_test(variances)
-
-if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
-    print(f'The dispersion is non-uniform. G = {G}')
-    sys.exit()
-
-F = F_test(data, means, exp_variance)
-if F > c.F_STANDART:
-    print(f'F is more than the table value. F = {F}')
-    sys.exit()
-
-regression_coefficients = calculate_regression_coefficients(data)
-
+if c.PREDICT_RESULT:
+    with open(c.COEF_FILE) as f:
+        coef = f.readline()
+    f.close()
+    coef = coef.replace('[','').replace(']','')
+    coef = list(map(float, coef.split(', ')))
+    print(linear_regression(c.PRED_DATA, coef))
 
 
 
