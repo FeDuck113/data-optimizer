@@ -1,5 +1,6 @@
 import config as c
 import sys
+import numpy as np
 
 def calculate_variance(data):
     n_exp = len(data)
@@ -62,12 +63,16 @@ def calculate_regression_coefficients(data):
 
     return regression_coefficients
 
-def linear_regression(data, coefficients):
-    predicted_result = coefficients[0]
+def calculate_intercept(data):
+    params = list()
     for i in range(len(data)):
-        predicted_result += coefficients[i + 1] * data[i]
-    return predicted_result
+        params.append([1]+[j for j in data[i][:-1]])
+    results = [exp[-1] for exp in data]
 
+    intercept_coefficients, _, _, _ = np.linalg.lstsq(params, results, rcond=None)
+    intercept = intercept_coefficients[0]
+
+    return intercept
 
 def calculate_coefficients(data):
     variances, means = calculate_variance(data)
@@ -82,23 +87,29 @@ def calculate_coefficients(data):
         print(f'F is more than the table value. F = {F}')
         sys.exit()
 
-    regression_coefficients = calculate_regression_coefficients(data)
+    regression_coefficients = [calculate_intercept(data)] + calculate_regression_coefficients(data)
 
     return regression_coefficients
+
+def linear_regression(data, coefficients):
+    data = np.insert(data, 0, 1)
+    predicted_result = np.dot(coefficients, data)
+    return predicted_result
+
 
 
 if c.CALCULATE_COEFFICIENTS:
     coef = calculate_coefficients(c.EXP_DATA)
+    # intercept = calculate_intercept(c.EXP_DATA)
     with open(c.COEF_FILE, 'w') as f:
         f.write(str(coef))
-    f.close()
 
 if c.PREDICT_RESULT:
     with open(c.COEF_FILE) as f:
         coef = f.readline()
-    f.close()
-    coef = coef.replace('[','').replace(']','')
-    coef = list(map(float, coef.split(', ')))
+
+    coef = eval(coef)
+
     print(linear_regression(c.PRED_DATA, coef))
 
 
