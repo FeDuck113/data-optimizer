@@ -1,5 +1,4 @@
 import config as c
-import sys
 import numpy as np
 
 def calculate_variance(data):
@@ -79,13 +78,11 @@ def calculate_coefficients(data):
     G, exp_variance = cochrans_test(variances)
 
     if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
-        print(f'The dispersion is non-uniform. G = {G}')
-        sys.exit()
+        raise ValueError(f'The dispersion is non-uniform. G = {G}')
 
     F = F_test(data, means, exp_variance)
     if F > c.F_STANDART:
-        print(f'F is more than the table value. F = {F}')
-        sys.exit()
+        raise ValueError(f'F is more than the table value. F = {F}')
 
     regression_coefficients = [calculate_intercept(data)] + calculate_regression_coefficients(data)
 
