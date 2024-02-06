@@ -25,8 +25,8 @@ def cochrans_test(variances):    #добавить рассчёт дисперс
     max_variances = max(max(var) for var in variances)
     sum_variances = sum(sum(var) for var in variances)
 
-    G = max_variances / sum_variances       #Коэффициент Кохрена
-    exp_variances = sum_variances/n_exp     #дисперсия экспиримента
+    G = max_variances / sum_variances       #calculation of Cochran coefficient
+    exp_variances = sum_variances/n_exp     #calculation of variance of the experiment
 
     return G, exp_variances
 
@@ -41,8 +41,7 @@ def F_test(data, means, exp_variance):
     for j in range(n_param):
         adeq_variences += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
 
-    #расчёт критерия Фишера
-    F = adeq_variences / exp_variance
+    F = adeq_variences / exp_variance       #calculation of F-test
 
     return F
 
@@ -71,8 +70,9 @@ def calculate_coefficients(data):
 
         j.insert(len(j)-2, product_num)     #adding x1*x2
 
-
     variances, means = calculate_variance(data)
+
+    #comparison with tabular data
     G, exp_variance = cochrans_test(variances)
 
     if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
@@ -88,9 +88,9 @@ def calculate_coefficients(data):
 
 
 def linear_regression(data, coefficients):
-    result = coefficients[0]  # начинаем с константного члена
+    result = coefficients[0]                        # начинаем с константного члена
     for i in range(len(data)):
-        result += coefficients[i + 1] * data[i]  # добавляем остальные члены
+        result += coefficients[i + 1] * data[i]     # добавляем остальные члены
     return result
 
 
