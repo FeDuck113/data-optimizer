@@ -6,9 +6,9 @@ CALCULATE_COEFFICIENTS = True
 PREDICT_RESULT = True
 
 # EXP_DATA = []
-EXP_DATA = [[95.2,90.3,84.8,81.8], [94.9,89.9,85,82.05], [94.9,89.8,85.2,82.15]]
+EXP_DATA = [[-1,1,95], [-1,-1,90], [1,-1,85], [1,1,82]]
 
-PRED_DATA = [95.2,90.3,84.8]
+PRED_DATA = [1,1]
 COEF_FILE = 'output_data/coof.txt'
 
 

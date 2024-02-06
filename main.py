@@ -1,11 +1,10 @@
 import config as c
-import numpy as np
 
 def calculate_variance(data):
     n_exp = len(data)
-    n_param = len(data[0]) - 1 #мэйби -1, чтоб не учитывать результат
+    n_param = len(data[0]) - 1
 
-    #рассчёт средних значений для ка
+    #рассчёт средних значений для каждого параметра
     means = list()
     for i in range(n_param):
         means.append(sum(exp[i] for exp in data)/n_exp)
@@ -19,7 +18,6 @@ def calculate_variance(data):
         variances.append(list(variances_exp))
 
     return variances, means
-
 
 def cochrans_test(variances):    #добавить рассчёт дисперсии адекватности
     n_exp = len(variances)
@@ -62,18 +60,18 @@ def calculate_regression_coefficients(data):
 
     return regression_coefficients
 
-def calculate_intercept(data):
-    params = list()
-    for i in range(len(data)):
-        params.append([1]+[j for j in data[i][:-1]])
-    results = [exp[-1] for exp in data]
-
-    intercept_coefficients, _, _, _ = np.linalg.lstsq(params, results, rcond=None)
-    intercept = intercept_coefficients[0]
-
-    return intercept
 
 def calculate_coefficients(data):
+    for j in data:
+        j.insert(0, 1)                      #adding x0
+
+        product_num = 1
+        for i in j[1:len(j)-1]:
+            product_num *= i
+
+        j.insert(len(j)-2, product_num)     #adding x1*x2
+
+
     variances, means = calculate_variance(data)
     G, exp_variance = cochrans_test(variances)
 
@@ -84,20 +82,20 @@ def calculate_coefficients(data):
     if F > c.F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
-    regression_coefficients = [calculate_intercept(data)] + calculate_regression_coefficients(data)
+    regression_coefficients = calculate_regression_coefficients(data)
 
     return regression_coefficients
 
-def linear_regression(data, coefficients):
-    data = np.insert(data, 0, 1)
-    predicted_result = np.dot(coefficients, data)
-    return predicted_result
 
+def linear_regression(data, coefficients):
+    result = coefficients[0]  # начинаем с константного члена
+    for i in range(len(data)):
+        result += coefficients[i + 1] * data[i]  # добавляем остальные члены
+    return result
 
 
 if c.CALCULATE_COEFFICIENTS:
     coef = calculate_coefficients(c.EXP_DATA)
-    # intercept = calculate_intercept(c.EXP_DATA)
     with open(c.COEF_FILE, 'w') as f:
         f.write(str(coef))
 
@@ -108,8 +106,3 @@ if c.PREDICT_RESULT:
     coef = eval(coef)
 
     print(linear_regression(c.PRED_DATA, coef))
-
-
-
-
-
