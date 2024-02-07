@@ -1,0 +1,17 @@
+{
+  "operating_work":
+  {
+    "CALCULATE_COEFFICIENTS": true,
+    "PREDICT_RESULT": true
+  },
+  "input_data":
+  {
+    "1": [[-1,1,95], [-1,-1,90], [1,-1,85], [1,1,82]],
+    "2": [1,1]
+  },
+  "const":
+  {
+    "G_STANDART": 0.6798,
+    "F_STANDART": 3.84
+  }
+}
