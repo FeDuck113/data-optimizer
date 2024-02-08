@@ -1,4 +1,5 @@
 import config as c
+import json
 
 def calculate_variance(data):
     n_exp = len(data)
@@ -94,15 +95,20 @@ def linear_regression(data, coefficients):
     return result
 
 
-if c.CALCULATE_COEFFICIENTS:
-    coef = calculate_coefficients(c.EXP_DATA)
-    with open(c.COEF_FILE, 'w') as f:
-        f.write(str(coef))
+with open('config.json', encoding="utf-8") as f:
+    config = json.load(f)
 
-if c.PREDICT_RESULT:
-    with open(c.COEF_FILE) as f:
-        coef = f.readline()
+    CALCULATE_COEFFICIENTS = config['operating_mode']['CALCULATE_COEFFICIENTS']
+    PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
-    coef = eval(coef)
+if CALCULATE_COEFFICIENTS:
+    coef = calculate_coefficients(config['input_data']['EXP_DATA'])
+    with open('config.json', 'r+', encoding='utf-8') as f:
+        config['coefficients'] = coef
+        f.seek(0)
+        json.dump(config, f, indent=1, ensure_ascii=False, sort_keys=True)
+        f.truncate()
 
-    print(linear_regression(c.PRED_DATA, coef))
+if PREDICT_RESULT:
+    coef = config['coefficients']
+    print(linear_regression(config['input_data']['PRED_DATA'], coef))

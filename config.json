@@ -1,14 +1,15 @@
 {
-  "operating_work":
+  "operating_mode":
   {
     "CALCULATE_COEFFICIENTS": true,
-    "PREDICT_RESULT": true
+    "PREDICT_RESULT": false
   },
   "input_data":
   {
-    "1": [[-1,1,95], [-1,-1,90], [1,-1,85], [1,1,82]],
-    "2": [1,1]
+    "EXP_DATA": [[-1,1,95], [-1,-1,90], [1,-1,85], [1,1,82]],
+    "PRED_DATA": [1,1]
   },
+  "coefficients": [],
   "const":
   {
     "G_STANDART": 0.6798,
