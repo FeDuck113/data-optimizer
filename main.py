@@ -1,4 +1,3 @@
-import config as c
 import json
 
 
@@ -117,8 +116,11 @@ if CALCULATE_COEFFICIENTS:
 
 if PREDICT_RESULT:
     coef = eval(config['coefficients'])
+    PRED_DATA = eval(config['input_data']['PRED_DATA'])
 
     if not coef:
         raise NameError('Regression coefficients are missing')
+    if not PRED_DATA:
+        raise NameError('Prediction data are missing')
 
-    print(linear_regression(eval(config['input_data']['PRED_DATA']), coef))
+    print(linear_regression(PRED_DATA, coef))
