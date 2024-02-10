@@ -1,15 +1,16 @@
 import config as c
 
+
 def calculate_variance(data):
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
-    #рассчёт средних значений для каждого параметра
+    # calculation of the mean values for each parameter
     means = list()
     for i in range(n_param):
         means.append(sum(exp[i] for exp in data)/n_exp)
 
-    #расчёт дисперсии для каждого значения параметра
+    # calculation of the variances for each parameter
     variances = list()
     for i in range(n_exp):
         variances_exp = list()
@@ -19,33 +20,37 @@ def calculate_variance(data):
 
     return variances, means
 
-def cochrans_test(variances):    #добавить рассчёт дисперсии адекватности
+
+def cochrans_test(variances):
     n_exp = len(variances)
 
     max_variances = max(max(var) for var in variances)
     sum_variances = sum(sum(var) for var in variances)
 
-    G = max_variances / sum_variances       #calculation of Cochran coefficient
-    exp_variances = sum_variances/n_exp     #calculation of variance of the experiment
+    G = max_variances / sum_variances       # calculation of Cochran coefficient
+    exp_variances = sum_variances/n_exp     # calculation of variance of the experiment
 
     return G, exp_variances
 
+
+# calculation of F-test
 def F_test(data, means, exp_variance):
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
-    f = n_exp * n_param - n_exp     #число степеней свободы
+    f = n_exp * n_param - n_exp             # Degrees of freedom
 
-    # расчёт дисперсии адекватности
-    adeq_variences = 0
+    # calculation of the variance of adequacy
+    adeq_variances = 0
     for j in range(n_param):
-        adeq_variences += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
+        adeq_variances += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
 
-    F = adeq_variences / exp_variance       #calculation of F-test
+    F = adeq_variances / exp_variance       # calculation of F-test
 
     return F
 
-#расчёт коэффициентов регрессии
+
+# calculation of the regression coefficient
 def calculate_regression_coefficients(data):
     n_exp = len(data)
     n_param = len(data[0]) - 1
@@ -62,27 +67,28 @@ def calculate_regression_coefficients(data):
 
 def calculate_coefficients(data):
     for j in data:
-        j.insert(0, 1)                      #adding x0
+        j.insert(0, 1)                      # adding x0
 
         product_num = 1
         for i in j[1:len(j)-1]:
             product_num *= i
 
-        j.insert(len(j)-2, product_num)     #adding x1*x2
+        j.insert(len(j)-2, product_num)     # adding x1*x2
 
-    variances, means = calculate_variance(data)
+    variances, means = calculate_variance(data)     # getting variances and mean values for each parameter
 
-    #comparison with tabular data
-    G, exp_variance = cochrans_test(variances)
+    G, exp_variance = cochrans_test(variances)      # getting Cochran coefficient and variance of experiment
 
-    if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
+    # comparison with tabular data.
+    # if the value is greater than the tabular ones, then the variances is non-uniform
+    if G > c.G_STANDART:
         raise ValueError(f'The dispersion is non-uniform. G = {G}')
 
     F = F_test(data, means, exp_variance)
     if F > c.F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
-    regression_coefficients = calculate_regression_coefficients(data)
+    regression_coefficients = calculate_regression_coefficients(data)   # getting regression coefficients
 
     return regression_coefficients
 
