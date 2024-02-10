@@ -1,6 +1,7 @@
 import json
 
 
+# calculation of variances and mean values
 def calculate_variance(data: list) -> (list, list):
     n_exp = len(data)
     n_param = len(data[0]) - 1
@@ -21,6 +22,7 @@ def calculate_variance(data: list) -> (list, list):
     return variances, means
 
 
+# calculation of cochrans_test and variance of experiment
 def cochrans_test(variances: list) -> (float, float):
     n_exp = len(variances)
 
@@ -73,7 +75,7 @@ def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> 
         for i in j[1:len(j)-1]:
             product_num *= i
 
-        j.insert(len(j)-2, product_num)     # adding x1*x2
+        j.insert(len(j)-2, product_num)     # adding product of parameters
 
     variances, means = calculate_variance(data)     # getting variances and mean values for each parameter
 
@@ -93,10 +95,10 @@ def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> 
     return regression_coefficients
 
 
-def linear_regression(data: list, coefficients: list) -> float: #а точно ли float
-    result = coefficients[0]                        # начинаем с константного члена
+def linear_regression(data: list, coefficients: list) -> float:
+    result = coefficients[0]                        # start with a constant value
     for i in range(len(data)):
-        result += coefficients[i + 1] * data[i]     # добавляем остальные члены
+        result += coefficients[i + 1] * data[i]     # adding the remaining members
     return result
 
 
@@ -110,7 +112,7 @@ if CALCULATE_COEFFICIENTS:
     EXP_DATA = eval(config['input_data']['EXP_DATA'])
 
     if not EXP_DATA:
-        raise NameError('Experimental data are missing')
+        raise ValueError('Experimental data are missing')
 
     coef = calculate_coefficients(EXP_DATA, config['const']['G_STANDART'], config['const']['F_STANDART'])
 
@@ -125,9 +127,9 @@ if PREDICT_RESULT:
     PRED_DATA = eval(config['input_data']['PRED_DATA'])
 
     if not coef:
-        raise NameError('Regression coefficients are missing')
+        raise ValueError('Regression coefficients are missing')
     if not PRED_DATA:
-        raise NameError('Prediction data are missing')
+        raise ValueError('Prediction data are missing')
 
     result = linear_regression(PRED_DATA, coef)
     print(result)
