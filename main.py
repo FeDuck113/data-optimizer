@@ -117,4 +117,8 @@ if CALCULATE_COEFFICIENTS:
 
 if PREDICT_RESULT:
     coef = eval(config['coefficients'])
+
+    if not coef:
+        raise NameError('Regression coefficients are missing')
+
     print(linear_regression(eval(config['input_data']['PRED_DATA']), coef))
