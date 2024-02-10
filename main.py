@@ -1,7 +1,7 @@
 import json
 
 
-def calculate_variance(data):
+def calculate_variance(data: list) -> (list, list):
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
@@ -21,7 +21,7 @@ def calculate_variance(data):
     return variances, means
 
 
-def cochrans_test(variances):
+def cochrans_test(variances: list) -> (float, float):
     n_exp = len(variances)
 
     max_variances = max(max(var) for var in variances)
@@ -34,7 +34,7 @@ def cochrans_test(variances):
 
 
 # calculation of F-test
-def F_test(data, means, exp_variance):
+def F_test(data: list, means: list, exp_variance: float) -> float:
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
@@ -51,7 +51,7 @@ def F_test(data, means, exp_variance):
 
 
 # calculation of the regression coefficient
-def calculate_regression_coefficients(data):
+def calculate_regression_coefficients(data: list) -> list:
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
@@ -65,7 +65,7 @@ def calculate_regression_coefficients(data):
     return regression_coefficients
 
 
-def calculate_coefficients(data):
+def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> list:
     for j in data:
         j.insert(0, 1)                      # adding x0
 
@@ -81,11 +81,11 @@ def calculate_coefficients(data):
 
     # comparison with tabular data.
     # if the value is greater than the tabular ones, then the variances is non-uniform
-    if G > c.G_STANDART:
+    if G > G_STANDART:
         raise ValueError(f'The dispersion is non-uniform. G = {G}')
 
     F = F_test(data, means, exp_variance)
-    if F > c.F_STANDART:
+    if F > F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
     regression_coefficients = calculate_regression_coefficients(data)   # getting regression coefficients
@@ -93,7 +93,7 @@ def calculate_coefficients(data):
     return regression_coefficients
 
 
-def linear_regression(data, coefficients):
+def linear_regression(data: list, coefficients: list) -> float: #а точно ли float
     result = coefficients[0]                        # начинаем с константного члена
     for i in range(len(data)):
         result += coefficients[i + 1] * data[i]     # добавляем остальные члены
@@ -107,7 +107,13 @@ with open('config.json', encoding="utf-8") as f:
     PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
 if CALCULATE_COEFFICIENTS:
-    coef = calculate_coefficients(eval(config['input_data']['EXP_DATA']))
+    EXP_DATA = eval(config['input_data']['EXP_DATA'])
+
+    if not EXP_DATA:
+        raise NameError('Experimental data are missing')
+
+    coef = calculate_coefficients(EXP_DATA, config['const']['G_STANDART'], config['const']['F_STANDART'])
+
     with open('config.json', 'r+', encoding='utf-8') as f:
         config['coefficients'] = str(coef)
         f.seek(0)
@@ -123,4 +129,5 @@ if PREDICT_RESULT:
     if not PRED_DATA:
         raise NameError('Prediction data are missing')
 
-    print(linear_regression(PRED_DATA, coef))
+    result = linear_regression(PRED_DATA, coef)
+    print(result)
