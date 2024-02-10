@@ -108,13 +108,13 @@ with open('config.json', encoding="utf-8") as f:
     PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
 if CALCULATE_COEFFICIENTS:
-    coef = calculate_coefficients(config['input_data']['EXP_DATA'])
+    coef = calculate_coefficients(eval(config['input_data']['EXP_DATA']))
     with open('config.json', 'r+', encoding='utf-8') as f:
-        config['coefficients'] = coef
+        config['coefficients'] = str(coef)
         f.seek(0)
-        json.dump(config, f, indent=1, ensure_ascii=False, sort_keys=True)
+        json.dump(config, f, indent=4)
         f.truncate()
 
 if PREDICT_RESULT:
-    coef = config['coefficients']
-    print(linear_regression(config['input_data']['PRED_DATA'], coef))
+    coef = eval(config['coefficients'])
+    print(linear_regression(eval(config['input_data']['PRED_DATA']), coef))
