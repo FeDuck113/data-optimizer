@@ -1,16 +1,17 @@
-import config as c
-import numpy as np
+import json
 
-def calculate_variance(data):
+
+# calculation of variances and mean values
+def calculate_variance(data: list) -> (list, list):
     n_exp = len(data)
-    n_param = len(data[0]) - 1 #мэйби -1, чтоб не учитывать результат
+    n_param = len(data[0]) - 1
 
-    #рассчёт средних значений для ка
+    # calculation of the mean values for each parameter
     means = list()
     for i in range(n_param):
         means.append(sum(exp[i] for exp in data)/n_exp)
 
-    #расчёт дисперсии для каждого значения параметра
+    # calculation of the variances for each parameter
     variances = list()
     for i in range(n_exp):
         variances_exp = list()
@@ -21,35 +22,38 @@ def calculate_variance(data):
     return variances, means
 
 
-def cochrans_test(variances):    #добавить рассчёт дисперсии адекватности
+# calculation of cochrans_test and variance of experiment
+def cochrans_test(variances: list) -> (float, float):
     n_exp = len(variances)
 
     max_variances = max(max(var) for var in variances)
     sum_variances = sum(sum(var) for var in variances)
 
-    G = max_variances / sum_variances       #Коэффициент Кохрена
-    exp_variances = sum_variances/n_exp     #дисперсия экспиримента
+    G = max_variances / sum_variances       # calculation of Cochran coefficient
+    exp_variances = sum_variances/n_exp     # calculation of variance of the experiment
 
     return G, exp_variances
 
-def F_test(data, means, exp_variance):
+
+# calculation of F-test
+def F_test(data: list, means: list, exp_variance: float) -> float:
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
-    f = n_exp * n_param - n_exp     #число степеней свободы
+    f = n_exp * n_param - n_exp             # Degrees of freedom
 
-    # расчёт дисперсии адекватности
-    adeq_variences = 0
+    # calculation of the variance of adequacy
+    adeq_variances = 0
     for j in range(n_param):
-        adeq_variences += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
+        adeq_variances += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
 
-    #расчёт критерия Фишера
-    F = adeq_variences / exp_variance
+    F = adeq_variances / exp_variance       # calculation of F-test
 
     return F
 
-#расчёт коэффициентов регрессии
-def calculate_regression_coefficients(data):
+
+# calculation of the regression coefficient
+def calculate_regression_coefficients(data: list) -> list:
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
@@ -62,54 +66,70 @@ def calculate_regression_coefficients(data):
 
     return regression_coefficients
 
-def calculate_intercept(data):
-    params = list()
-    for i in range(len(data)):
-        params.append([1]+[j for j in data[i][:-1]])
-    results = [exp[-1] for exp in data]
 
-    intercept_coefficients, _, _, _ = np.linalg.lstsq(params, results, rcond=None)
-    intercept = intercept_coefficients[0]
+def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> list:
+    for j in data:
+        j.insert(0, 1)                      # adding x0
 
-    return intercept
+        product_num = 1
+        for i in j[1:len(j)-1]:
+            product_num *= i
 
-def calculate_coefficients(data):
-    variances, means = calculate_variance(data)
-    G, exp_variance = cochrans_test(variances)
+        j.insert(len(j)-2, product_num)     # adding product of parameters
 
-    if G > c.G_STANDART:  #если больше табличного значения, то ряд дисперсий неоднородный
+    variances, means = calculate_variance(data)     # getting variances and mean values for each parameter
+
+    G, exp_variance = cochrans_test(variances)      # getting Cochran coefficient and variance of experiment
+
+    # comparison with tabular data.
+    # if the value is greater than the tabular ones, then the variances is non-uniform
+    if G > G_STANDART:
         raise ValueError(f'The dispersion is non-uniform. G = {G}')
 
     F = F_test(data, means, exp_variance)
-    if F > c.F_STANDART:
+    if F > F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
-    regression_coefficients = [calculate_intercept(data)] + calculate_regression_coefficients(data)
+    regression_coefficients = calculate_regression_coefficients(data)   # getting regression coefficients
 
     return regression_coefficients
 
-def linear_regression(data, coefficients):
-    data = np.insert(data, 0, 1)
-    predicted_result = np.dot(coefficients, data)
-    return predicted_result
+
+def linear_regression(data: list, coefficients: list) -> float:
+    result = coefficients[0]                        # start with a constant value
+    for i in range(len(data)):
+        result += coefficients[i + 1] * data[i]     # adding the remaining members
+    return result
 
 
+with open('config.json', encoding="utf-8") as f:
+    config = json.load(f)
 
-if c.CALCULATE_COEFFICIENTS:
-    coef = calculate_coefficients(c.EXP_DATA)
-    # intercept = calculate_intercept(c.EXP_DATA)
-    with open(c.COEF_FILE, 'w') as f:
-        f.write(str(coef))
+    CALCULATE_COEFFICIENTS = config['operating_mode']['CALCULATE_COEFFICIENTS']
+    PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
-if c.PREDICT_RESULT:
-    with open(c.COEF_FILE) as f:
-        coef = f.readline()
+if CALCULATE_COEFFICIENTS:
+    EXP_DATA = eval(config['input_data']['EXP_DATA'])
 
-    coef = eval(coef)
+    if not EXP_DATA:
+        raise ValueError('Experimental data are missing')
 
-    print(linear_regression(c.PRED_DATA, coef))
+    coef = calculate_coefficients(EXP_DATA, config['const']['G_STANDART'], config['const']['F_STANDART'])
 
+    with open('config.json', 'r+', encoding='utf-8') as f:
+        config['coefficients'] = str(coef)
+        f.seek(0)
+        json.dump(config, f, indent=4)
+        f.truncate()
 
+if PREDICT_RESULT:
+    coef = eval(config['coefficients'])
+    PRED_DATA = eval(config['input_data']['PRED_DATA'])
 
+    if not coef:
+        raise ValueError('Regression coefficients are missing')
+    if not PRED_DATA:
+        raise ValueError('Prediction data are missing')
 
-
+    result = linear_regression(PRED_DATA, coef)
+    print(result)
