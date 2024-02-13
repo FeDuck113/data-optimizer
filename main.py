@@ -10,13 +10,13 @@ def generate_products(data: list) -> dict:
                 products[i, j] = data[i]*data[j]
 
     for i in range(len(data)):
-        b2 = dict()
+        new_products = dict()
         for j in products:
             if not i in j:
                 new_comb = tuple(sorted(j + (i,)))
                 if new_comb not in products:
-                    b2[new_comb] = products[j] * data[i]
-        products.update(b2)
+                    new_products[new_comb] = products[j] * data[i]
+        products.update(new_products)
 
     return products
 
@@ -89,11 +89,11 @@ def calculate_regression_coefficients(data: list) -> list:
 
 def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> list:
     for j in data:
-        j.insert(0, 1)                      # adding x0
+        j.insert(0, 1)                              # adding x0
 
-        products_num = generate_products(j[1:-1])
-        for i in products_num:
-            j.insert(len(j)-2, products_num[i])     # adding product of parameters
+        products_num = generate_products(j[1:-1])   # getting all products of parameters
+        for i in products_num:                      # adding products of parameters
+            j.insert(len(j)-2, products_num[i])
 
     variances, means = calculate_variance(data)     # getting variances and mean values for each parameter
 
@@ -114,9 +114,13 @@ def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> 
 
 
 def linear_regression(data: list, coefficients: list) -> float:
+    products_num = generate_products(PRED_DATA)     # getting all products of parameters
+    for i in products_num:                          # adding products of parameters
+        PRED_DATA.insert(len(PRED_DATA) - 1, products_num[i])
+
     result = coefficients[0]                        # start with a constant value
     for i in range(len(data)):
-        result += coefficients[i + 1] * data[i]     # adding the remaining members
+        result += coefficients[i + 1] * data[i]     # adding the remaining parameters
     return result
 
 
@@ -132,7 +136,7 @@ if CALCULATE_COEFFICIENTS:
     if not EXP_DATA:
         raise ValueError('Experimental data are missing')
 
-    coef = calculate_coefficients(EXP_DATA, config['const']['G_STANDART'], config['const']['F_STANDART'])
+    coef = calculate_coefficients(EXP_DATA, config['consts']['G_STANDART'], config['consts']['F_STANDART'])
     with open('config.json', 'r+', encoding='utf-8') as f:
         config['coefficients'] = str(coef)
         f.seek(0)
@@ -144,19 +148,11 @@ if PREDICT_RESULT:
     coef = eval(config['coefficients'])
     PRED_DATA = eval(config['input_data']['PRED_DATA'])
 
-    products_num = generate_products(PRED_DATA)
-    print(PRED_DATA)
-    print(products_num)
-    for i in products_num:
-        PRED_DATA.insert(len(PRED_DATA)-1, products_num[i])     # adding product of parameters
-
-    print(PRED_DATA)
-
     if not coef:
         raise ValueError('Regression coefficients are missing')
     if not PRED_DATA:
         raise ValueError('Prediction data are missing')
 
     result = linear_regression(PRED_DATA, coef)
-    result = round(result, config["const"]["RESULT_ACCURACY"])
+    result = round(result, config['consts']['RESULT_ACCURACY'])
     print(result)
