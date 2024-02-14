@@ -73,7 +73,7 @@ def F_test(data: list, means: list, exp_variance: float) -> float:
 
 
 # calculation of the regression coefficient
-def calculate_regression_coefficients(data: list) -> list:
+def calculate_regression_coefficients(data: list, COEF_ACCURACY: int) -> list:
     n_exp = len(data)
     n_param = len(data[0]) - 1
 
@@ -82,12 +82,12 @@ def calculate_regression_coefficients(data: list) -> list:
         numerator = sum(data[j][-1]*data[j][i] for j in range(n_exp))
         denominator = sum(data[j][i] ** 2 for j in range(n_exp))
 
-        regression_coefficients.append(numerator/denominator)
+        regression_coefficients.append(round(numerator/denominator, COEF_ACCURACY))
 
     return regression_coefficients
 
 
-def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> list:
+def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float, COEF_ACCURACY: int) -> list:
     for j in data:
         j.insert(0, 1)                              # adding x0
 
@@ -108,7 +108,7 @@ def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float) -> 
     if F > F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
-    regression_coefficients = calculate_regression_coefficients(data)   # getting regression coefficients
+    regression_coefficients = calculate_regression_coefficients(data, COEF_ACCURACY)   # getting regression coefficients
 
     return regression_coefficients
 
@@ -136,7 +136,8 @@ if CALCULATE_COEFFICIENTS:
     if not EXP_DATA:
         raise ValueError('Experimental data are missing')
 
-    coef = calculate_coefficients(EXP_DATA, config['consts']['G_STANDART'], config['consts']['F_STANDART'])
+    coef = calculate_coefficients(EXP_DATA, config['consts']['G_STANDART'], config['consts']['F_STANDART'],
+                                  config['consts']['COEF_ACCURACY'])
     with open('config.json', 'r+', encoding='utf-8') as f:
         config['coefficients'] = str(coef)
         f.seek(0)
