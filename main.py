@@ -22,33 +22,25 @@ def generate_products(data: list) -> dict:
 
 
 # calculation of variances and mean values
-def calculate_variance(data: list) -> (list, list):
-    n_exp = len(data)
-    n_param = len(data[0]) - 1
+def calculate_variance(PARAMS: list, RESULTS: list) -> (list, list):
+    n_exp = len(PARAMS)
 
-    # calculation of the mean values for each parameter
-    means = list()
-    for i in range(n_param):
-        means.append(sum(exp[i] for exp in data)/n_exp)
-
-    # calculation of the variances for each parameter
     variances = list()
     for i in range(n_exp):
-        variances_exp = list()
-        for j in range(n_param):
-            variances_exp.append((data[i][j] - means[j]) ** 2 / (n_exp - 1))
-        variances.append(list(variances_exp))
+        var = 0.0
+        for j in range(len(RESULTS[0])):
+            var += (PARAMS[i][-1]-RESULTS[i][j])**2
+        variances.append(var/2)
 
-    return variances, means
+    return variances
 
 
 # calculation of cochrans_test and variance of experiment
 def cochrans_test(variances: list) -> (float, float):
     n_exp = len(variances)
 
-    max_variances = max(max(var) for var in variances)
-    sum_variances = sum(sum(var) for var in variances)
-
+    max_variances = max(variances)
+    sum_variances = sum(variances)
     G = max_variances / sum_variances       # calculation of Cochran coefficient
     exp_variances = sum_variances/n_exp     # calculation of variance of the experiment
 
@@ -56,18 +48,15 @@ def cochrans_test(variances: list) -> (float, float):
 
 
 # calculation of F-test
-def F_test(data: list, means: list, exp_variance: float) -> float:
+def F_test(data: list, n_params: int, variances: list, exp_variance: float) -> float:
     n_exp = len(data)
-    n_param = len(data[0]) - 1
 
-    f = n_exp * n_param - n_exp             # Degrees of freedom
+    f = n_exp - (n_params + 1)                # calculation of degrees of freedom
+    print('f =', f, n_params)
 
-    # calculation of the variance of adequacy
-    adeq_variances = 0
-    for j in range(n_param):
-        adeq_variances += (sum((means[j]-data[i][j])**2 / f for i in range(n_exp)))
-
+    adeq_variances = sum(variances) / f     # calculation of variance of adequacy
     F = adeq_variances / exp_variance       # calculation of F-test
+    print(F, adeq_variances)
 
     return F
 
@@ -87,15 +76,31 @@ def calculate_regression_coefficients(data: list, COEF_ACCURACY: int) -> list:
     return regression_coefficients
 
 
-def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float, COEF_ACCURACY: int) -> list:
-    for j in data:
-        j.insert(0, 1)                              # adding x0
+def optimize_coefficients(coef: list, exp_variance: float, T_TEST: float, n_exp: int) -> list:
+    print(T_TEST*exp_variance)
+    print(exp_variance,'gfgf')
+    print(n_exp**0.5)
+    confidence_interval = (T_TEST*(exp_variance**0.5))/(n_exp**0.5)
+    print('interval', confidence_interval)
+    for i in range(len(coef)):
+        if -1 * confidence_interval < coef[i] < confidence_interval:
+            print('u')
+            coef[i] = 0
+    return coef
 
-        products_num = generate_products(j[1:-1])   # getting all products of parameters
-        for i in products_num:                      # adding products of parameters
-            j.insert(len(j)-2, products_num[i])
 
-    variances, means = calculate_variance(data)     # getting variances and mean values for each parameter
+def calculate_coefficients(PARAMS: list, RESULTS: list, G_STANDART: float, F_STANDART: float, OPTIMIZE_COEF: bool,
+                           T_TEST: float, COEF_ACCURACY: int) -> list:
+    n_params = len(PARAMS[0])
+    for j in range(len(PARAMS)):
+        PARAMS[j].insert(0, 1)                              # adding x0
+        PARAMS[j].append(sum(RESULTS[j])/len(RESULTS[j]))   # adding average result
+
+        products_num = generate_products(PARAMS[j][1:-1])   # getting all products of parameters
+        for i in products_num:                              # adding products of parameters
+            PARAMS[j].insert(len(PARAMS[j])-2, products_num[i])
+
+    variances = calculate_variance(PARAMS, RESULTS)     # getting variances and mean values for each parameter
 
     G, exp_variance = cochrans_test(variances)      # getting Cochran coefficient and variance of experiment
 
@@ -104,12 +109,16 @@ def calculate_coefficients(data: list, G_STANDART: float, F_STANDART: float, COE
     if G > G_STANDART:
         raise ValueError(f'The dispersion is non-uniform. G = {G}')
 
-    F = F_test(data, means, exp_variance)
+    F = F_test(PARAMS, n_params, variances, exp_variance)
     if F > F_STANDART:
         raise ValueError(f'F is more than the table value. F = {F}')
 
-    regression_coefficients = calculate_regression_coefficients(data, COEF_ACCURACY)   # getting regression coefficients
+    regression_coefficients = calculate_regression_coefficients(PARAMS, COEF_ACCURACY)   # getting regression coefficients
 
+    if OPTIMIZE_COEF:
+        print(regression_coefficients)
+        regression_coefficients = optimize_coefficients(regression_coefficients, exp_variance,
+                                                        T_TEST, len(PARAMS))
     return regression_coefficients
 
 
@@ -131,13 +140,16 @@ with open('config.json', encoding="utf-8") as f:
     PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
 if CALCULATE_COEFFICIENTS:
-    EXP_DATA = eval(config['input_data']['EXP_DATA'])
+    PARAMS = eval(config['input_data']['EXP_DATA']['PARAMETERS'])
+    RESULTS = eval(config['input_data']['EXP_DATA']['RESULTS'])
 
-    if not EXP_DATA:
+    if not PARAMS or not RESULTS:
         raise ValueError('Experimental data are missing')
 
-    coef = calculate_coefficients(EXP_DATA, config['consts']['G_STANDART'], config['consts']['F_STANDART'],
-                                  config['consts']['COEF_ACCURACY'])
+    consts = config['consts']
+    coef = calculate_coefficients(PARAMS, RESULTS, consts['G_STANDART'], consts['F_STANDART'], consts['OPTIMIZE_COEF'],
+                                  consts['T_TEST'], consts['COEF_ACCURACY'])
+
     with open('config.json', 'r+', encoding='utf-8') as f:
         config['coefficients'] = str(coef)
         f.seek(0)
