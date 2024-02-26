@@ -52,11 +52,9 @@ def F_test(data: list, n_params: int, variances: list, exp_variance: float) -> f
     n_exp = len(data)
 
     f = n_exp - (n_params + 1)                # calculation of degrees of freedom
-    print('f =', f, n_params)
 
     adeq_variances = sum(variances) / f     # calculation of variance of adequacy
     F = adeq_variances / exp_variance       # calculation of F-test
-    print(F, adeq_variances)
 
     return F
 
@@ -77,9 +75,6 @@ def calculate_regression_coefficients(data: list, COEF_ACCURACY: int) -> list:
 
 
 def optimize_coefficients(coef: list, exp_variance: float, T_TEST: float, n_exp: int) -> list:
-    print(T_TEST*exp_variance)
-    print(exp_variance,'gfgf')
-    print(n_exp**0.5)
     confidence_interval = (T_TEST*(exp_variance**0.5))/(n_exp**0.5)
     print('interval', confidence_interval)
     for i in range(len(coef)):
