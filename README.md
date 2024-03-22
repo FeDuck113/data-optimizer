@@ -1,23 +1,20 @@
 ![dataOptimizer](https://github.com/FeDuck113/data-optimizer/assets/71590602/f495b98b-cba4-4552-b1f9-64a0ec79b854)
 # Data optimizer
 
-This program is designed for the analysis of experimental data, calculation of regression coefficients, and prediction of experiment results.  
+This program is designed for the analysis of experimental data, calculation of regression coefficients, and prediction of experiment results  
   
-The program is developed in Python without the use of third-party libraries except for the standard json library for working with JSON files. It includes methods for statistical data analysis, tests for homogeneity of variance and model adequacy and linear regression.
-## Description
-
-
+The program is developed in Python without the use of third-party libraries except for the standard json library for working with JSON files. It includes methods for statistical data analysis, tests for homogeneity of variance and model adequacy and linear regression
 
 ## Getting started
 
-1. Install Python and download the source code of the program.
+1. Install Python and download the source code of the program
 
-2. Put your data and work parameters into a [json-file](##Json-file).
+2. Put your data and work parameters into a [json-file](##Json-file)
 
-3. Obtain the results of data analysis, regression coefficients and predicted values of experiments.
+3. Obtain the results of data analysis, regression coefficients and predicted values of experiments
 
 ## Json-file
-The json file includes input data, regression coefficients and job settings
+The json file includes input data, regression coefficients and job settings.
 ### Operating mode
 In "operating_mode" select the necessary operating modes of the program:
 * **"CALCULATE_COEFFICIENTS"** is responsible for calculating the regression coefficients based on the ***experimental data*** ("EXP_DATA")
@@ -49,8 +46,8 @@ The array contains the linear regression coefficients, which are recorded here a
     },
     "input_data": {
         "EXP_DATA": {
-            "PARAMETERS": "[[-1,-1,-1,-1], [-1,-1,-1,1], [-1,1,-1,1], [-1,1,-1,-1], [-1,1,1,1], [-1,1,1,-1], [1,1,-1,-1], [1,1,-1,1], [1,1,1,-1],[1,1,1,1],[-1,-1,1,-1], [-1,-1,1,1], [1,-1,-1,-1], [1,-1,-1,1],[1,-1,1,-1],[1,-1,1,1]]",
-            "RESULTS": "[[0.87,0.86,0.85], [0.75,0.75,0.76], [0.84,0.82,0.83], [0.87,0.88,0.88], [0.38,0.36,0.35], [0.75,0.77,0.77], [0.93,0.95,0.92], [0.88,0.87,0.87], [0.87,0.88,0.87], [0.87,0.88,0.86], [0.29,0.32,0.30], [0.16,0.14,0.15], [0.86,0.87,0.87], [0.83,0.84,0.82], [0.80,0.78,0.77], [0.74,0.73,0.75]]"
+            "PARAMETERS": "[[-1,-1,-1,-1], [-1,-1,-1,1], [-1,1,-1,1], [-1,1,-1,-1], [-1,1,1,1]]",
+            "RESULTS": "[[0.87,0.86,0.85], [0.75,0.75,0.76], [0.84,0.82,0.83], [0.87,0.88,0.88], [0.38,0.36,0.35]]"
         },
         "PRED_DATA": "[-1,-1,-1,-1]"
     },
