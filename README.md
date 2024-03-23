@@ -11,7 +11,9 @@ The program is developed in Python without the use of third-party libraries exce
 
 2. Put your data and work parameters into a [json-file](##Json-file)
 
-3. Obtain the results of data analysis, regression coefficients and predicted values of experiments
+3. Run main.py
+
+4. Obtain the results of data analysis, regression coefficients and predicted values of experiments
 
 ## Json-file
 The json file includes input data, regression coefficients and job settings.
@@ -62,6 +64,13 @@ The array contains the linear regression coefficients, which are recorded here a
     }
 }
 ```
+## Add-ons
+### Equation generator
+Can write a linear regression equation. For this you need to have the coefficients and "PRED_DATA" to determine the number of parameters (x)
+```
+y = 0.729375+0.116875x1x2+0.068542x1x3-0.123542x1x4-0.027292x2x3+0.093958x2x4+0.035208x3x4+0.043125x1x2x3-0.021875x1x3x4-0.029375x2x3x4
+```
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

@@ -26,10 +26,10 @@ with open('config.json', encoding="utf-8") as f:
     config = json.load(f)
 
 coef = eval(config['coefficients'])
-combs = generate_products(len(eval(config["input_data"]["EXP_DATA"]["PARAMETERS"])[0]))
+combs = generate_products(len(eval(config["input_data"]["PRED_DATA"])))
 
 
-equat = str(coef[0])
+equat = 'y = ' + str(coef[0])
 for i in range(len(combs)):
     if coef[i+1] != 0:
         if coef[i+1] < 0:
