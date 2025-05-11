@@ -32,7 +32,6 @@
   <div class="block" id="coefficients-block">
     <h2>Коэффициенты регрессии</h2>
     <div class="row" id="coefficients-row"></div>
-    <button class="add-button" onclick="addCoefficient()">+</button>
   </div>
 
   <!-- Блок 4: Постоянные -->
@@ -58,13 +57,13 @@
     let inputColumnCount = 4;
     let inputRowCount = 2;
 
-    function createColumnButtons() {
+    function createColumnButtons(add, remove) {
       const add_button = document.createElement('button');
       add_button.textContent = "+";
-      add_button.onclick = addInputColumn;
+      add_button.onclick = add;
       const delete_button = document.createElement('button');
       delete_button.textContent = "-";
-      delete_button.onclick = removeInputColumn;
+      delete_button.onclick = remove;
       return [add_button, delete_button];
     }
 
@@ -73,9 +72,7 @@
       const rows = document.querySelectorAll('#input-data-container .row');
       
       if (rows.length >= 1 & last) {
-        console.log(last);
         const last_row = rows[rows.length - 1];
-        console.log(last_row);
         last_row.removeChild(last_row.lastElementChild);
         last_row.removeChild(last_row.lastElementChild);
       }
@@ -110,7 +107,7 @@
       container.removeChild(container.lastElementChild);
 
       last_row = container.lastElementChild;
-      const [add_button, delete_button] = createColumnButtons();
+      const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
       last_row.appendChild(add_button);
       last_row.appendChild(delete_button);
     }
@@ -127,38 +124,59 @@
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
           row.appendChild(input);
-          const [add_button, delete_button] = createColumnButtons();
+          const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
           row.appendChild(add_button);
           row.appendChild(delete_button);
         }
         else row.appendChild(input);
       });
-      inputColumnCount++;
     }
 
     function removeInputColumn() {
-      if (inputColumnCount <= 1) return;
       const rows = document.querySelectorAll('#input-data-container .row');
+      if (rows[0].children.length <= 1) return;
       rows.forEach((row, index) => {
         if (index == rows.length - 1) {
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
-          const [add_button, delete_button] = createColumnButtons();
+          const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
           row.appendChild(add_button);
           row.appendChild(delete_button);
         }
         else row.removeChild(row.lastElementChild);
       });
-      inputColumnCount--;
     }
 
-    function addCoefficient() {
+
+    function addCoefficient(last = false) {
       const row = document.getElementById('coefficients-row');
       const input = document.createElement('input');
       input.type = 'number';
       input.step = 'any';
-      row.appendChild(input);
+
+      if (last) {
+        row.removeChild(row.lastElementChild);
+        row.removeChild(row.lastElementChild);
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+      else row.appendChild(input);
+
+    }
+    function removeCoefficient() {
+      const row = document.getElementById('coefficients-row');
+      if (row.children.length-2 <= 1) return;
+
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+
+      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient);
+      row.appendChild(add_button);
+      row.appendChild(delete_button);
     }
 
     function toggleBlocks() {
@@ -171,11 +189,13 @@
     window.onload = () => {
       const last = false;
       for (let i = 0; i < inputRowCount; i++) {
-        console.log(i);
         if (i == inputRowCount-1 || i == 0) addInputRow(true);
         else addInputRow(false);
       }
-      for (let i = 0; i < inputColumnCount; i++) addCoefficient();
+      for (let i = 0; i < inputColumnCount; i++) {
+        if (i == inputColumnCount - 1) addCoefficient(true);
+        else addCoefficient();
+      }
       toggleBlocks();
     };
   </script>
