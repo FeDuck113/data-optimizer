@@ -79,7 +79,6 @@ def optimize_coefficients(coef: list, exp_variance: float, T_TEST: float, n_exp:
     print('interval', confidence_interval)
     for i in range(len(coef)):
         if -1 * confidence_interval < coef[i] < confidence_interval:
-            print('u')
             coef[i] = 0
     return coef
 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data optimizer</title>
+
+    <style>
+      .hidden {
+        display: none;
+      }
+    </style>
+</head>
+<body>
+  <!-- Choose mode -->
+  <div class="block">
+    <h2>Режим работы</h2>
+    <label><input type="checkbox" id="calc_coef"> Вычислить коэффициенты</label><br>
+    <label><input type="checkbox" id="predict_result" onchange="toggleBlocks()"> Предсказать результат</label>
+  </div>
+
+  <!-- Input data -->
+  <div class="block">
+    <h2>Входные данные</h2>
+    <div id="input-data-container"></div>
+    <div>
+      <button class="add-button" onclick="addInputRow(true)">+ row</button>
+      <button class="remove-button" onclick="removeInputRow()">- row</button>
+    </div>
+  </div>
+
+  <!-- Сoefficients -->
+  <div class="block" id="coefficients-block">
+    <h2>Коэффициенты регрессии</h2>
+    <div class="row" id="coefficients-row"></div>
+    <button class="add-button" onclick="addCoefficient()">+</button>
+  </div>
+
+  <!-- Блок 4: Постоянные -->
+  <div class="block">
+    <h2>Константы</h2>
+    <label>G_STANDART: <input type="number" step="0.01" id="g_standart" value="0.33"></label><br>
+    <label>F_STANDART: <input type="number" step="0.01" id="f_standart" value="3.63"></label><br>
+    <label>T_TEST: <input type="number" step="0.001" id="t_test" value="5.841"></label><br>
+    <label>COEF_ACCURACY: <input type="number" id="coef_accuracy" value="6"></label><br>
+    <label>RESULT_ACCURACY: <input type="number" id="result_accuracy" value="2"></label><br>
+    <label><input type="checkbox" id="optimize_coef" checked> Оптимизировать коэффициенты</label>
+  </div>
+
+  <!-- Блок 5: Результат -->
+  <div class="block hidden" id="result-block">
+    <h2>Результат</h2>
+    <p>Здесь будет отображён результат после выполнения предсказания.</p>
+  </div>
+
+
+
+  <script>
+    let inputColumnCount = 4;
+    let inputRowCount = 2;
+
+    function createColumnButtons() {
+      const add_button = document.createElement('button');
+      add_button.textContent = "+";
+      add_button.onclick = addInputColumn;
+      const delete_button = document.createElement('button');
+      delete_button.textContent = "-";
+      delete_button.onclick = removeInputColumn;
+      return [add_button, delete_button];
+    }
+
+    function addInputRow(last=false) {
+      const container = document.getElementById('input-data-container');
+      const rows = document.querySelectorAll('#input-data-container .row');
+      
+      if (rows.length >= 1 & last) {
+        console.log(last);
+        const last_row = rows[rows.length - 1];
+        console.log(last_row);
+        last_row.removeChild(last_row.lastElementChild);
+        last_row.removeChild(last_row.lastElementChild);
+      }
+
+      const row = document.createElement('div');
+      row.classList.add('row');
+      for (let i = 0; i < inputColumnCount; i++) {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+        row.appendChild(input);
+      }
+
+      if (last) {
+        const add_button = document.createElement('button');
+        add_button.textContent = "+";
+        add_button.onclick = addInputColumn;
+        const delete_button = document.createElement('button');
+        delete_button.textContent = "-";
+        delete_button.onclick = removeInputColumn;
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      } 
+
+      container.appendChild(row);
+    }
+
+    function removeInputRow() {
+      const container = document.getElementById('input-data-container');
+      if (container.length <= 1) return;
+
+      container.removeChild(container.lastElementChild);
+
+      last_row = container.lastElementChild;
+      const [add_button, delete_button] = createColumnButtons();
+      last_row.appendChild(add_button);
+      last_row.appendChild(delete_button);
+    }
+
+
+    function addInputColumn() {
+      const rows = document.querySelectorAll('#input-data-container .row');
+      rows.forEach((row, index) => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+
+        if (index == rows.length - 1) {
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          row.appendChild(input);
+          const [add_button, delete_button] = createColumnButtons();
+          row.appendChild(add_button);
+          row.appendChild(delete_button);
+        }
+        else row.appendChild(input);
+      });
+      inputColumnCount++;
+    }
+
+    function removeInputColumn() {
+      if (inputColumnCount <= 1) return;
+      const rows = document.querySelectorAll('#input-data-container .row');
+      rows.forEach((row, index) => {
+        if (index == rows.length - 1) {
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          const [add_button, delete_button] = createColumnButtons();
+          row.appendChild(add_button);
+          row.appendChild(delete_button);
+        }
+        else row.removeChild(row.lastElementChild);
+      });
+      inputColumnCount--;
+    }
+
+    function addCoefficient() {
+      const row = document.getElementById('coefficients-row');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = 'any';
+      row.appendChild(input);
+    }
+
+    function toggleBlocks() {
+      const predictChecked = document.getElementById('predict_result').checked;
+      document.getElementById('coefficients-block').classList.toggle('hidden', !predictChecked);
+      document.getElementById('result-block').classList.toggle('hidden', !predictChecked);
+    }
+
+    // Стартовые данные
+    window.onload = () => {
+      const last = false;
+      for (let i = 0; i < inputRowCount; i++) {
+        console.log(i);
+        if (i == inputRowCount-1 || i == 0) addInputRow(true);
+        else addInputRow(false);
+      }
+      for (let i = 0; i < inputColumnCount; i++) addCoefficient();
+      toggleBlocks();
+    };
+  </script>
+
+
+</body>
+</html>
