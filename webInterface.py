@@ -7,10 +7,16 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-@app.get("/")
-def mainpage():
-    return templates.TemplateResponse("index.html")
+@app.get("/", response_class=HTMLResponse)
+async def mainpage(request: Request):
+    return templates.TemplateResponse("index.html", context={"request": request})
+
+@app.post("/analyze")
+async def analyze(request: Request):
+    data = await request.json()
+    print(data)
+    return 200
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
+    uvicorn.run("webInterface:app", reload=True)

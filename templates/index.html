@@ -37,6 +37,7 @@
   <!-- Блок 4: Постоянные -->
   <div class="block">
     <h2>Константы</h2>
+    <button onclick="resetConstants()">Сбросить до стандартных значений</button><br>
     <label>G_STANDART: <input type="number" step="0.01" id="g_standart" value="0.33"></label><br>
     <label>F_STANDART: <input type="number" step="0.01" id="f_standart" value="3.63"></label><br>
     <label>T_TEST: <input type="number" step="0.001" id="t_test" value="5.841"></label><br>
@@ -45,12 +46,15 @@
     <label><input type="checkbox" id="optimize_coef" checked> Оптимизировать коэффициенты</label>
   </div>
 
-  <!-- Блок 5: Результат -->
+  <div class="block">
+    <button onclick="submitData()">Отправить на сервер</button>
+  </div>
+
+<!-- Блок 5: Результат -->
   <div class="block hidden" id="result-block">
     <h2>Результат</h2>
     <p>Здесь будет отображён результат после выполнения предсказания.</p>
   </div>
-
 
 
   <script>
@@ -102,7 +106,8 @@
 
     function removeInputRow() {
       const container = document.getElementById('input-data-container');
-      if (container.length <= 1) return;
+      const rows = document.querySelectorAll('#input-data-container .row');
+      if (rows.length <= 1) return;
 
       container.removeChild(container.lastElementChild);
 
@@ -134,7 +139,7 @@
 
     function removeInputColumn() {
       const rows = document.querySelectorAll('#input-data-container .row');
-      if (rows[0].children.length <= 1) return;
+      if (rows.length <= 1 && rows[0].children.length <= 3 || rows[0].children.length <= 1) return;
       rows.forEach((row, index) => {
         if (index == rows.length - 1) {
           row.removeChild(row.lastElementChild);
@@ -185,6 +190,15 @@
       document.getElementById('result-block').classList.toggle('hidden', !predictChecked);
     }
 
+    function resetConstants() {
+      document.getElementById('g_standart').value = 0.33;
+      document.getElementById('f_standart').value = 3.63;
+      document.getElementById('t_test').value = 5.841;
+      document.getElementById('coef_accuracy').value = 6;
+      document.getElementById('result_accuracy').value = 2;
+      document.getElementById('optimize_coef').checked = true;
+    }
+
     // Стартовые данные
     window.onload = () => {
       const last = false;
@@ -198,6 +212,64 @@
       }
       toggleBlocks();
     };
+
+
+    async function submitData() {
+      // 1. Mods
+      const calcCoef = document.getElementById('calc_coef').checked;
+      const predictResult = document.getElementById('predict_result').checked;
+
+      // 2. InputData
+      const inputData = [];
+      document.querySelectorAll('#input-data-container .row').forEach(row => {
+        const rowData = Array.from(row.querySelectorAll('input')).map(input => parseFloat(input.value));
+        inputData.push(rowData);
+      });
+
+      // 3. Coefs
+      const coefRow = document.getElementById('coefficients-row');
+      const coefInputs = Array.from(coefRow.querySelectorAll('input'));
+      const coefficients = coefInputs.map(input => parseFloat(input.value));
+
+      // 4. Constns
+      const constants = {
+        g_standart: parseFloat(document.getElementById('g_standart').value),
+        f_standart: parseFloat(document.getElementById('f_standart').value),
+        t_test: parseFloat(document.getElementById('t_test').value),
+        coef_accuracy: parseInt(document.getElementById('coef_accuracy').value),
+        result_accuracy: parseInt(document.getElementById('result_accuracy').value),
+        optimize_coef: document.getElementById('optimize_coef').checked
+      };
+
+      const payload = {
+        mode: {
+          calc_coef: calcCoef,
+          predict_result: predictResult
+        },
+        input_data: inputData,
+        coefficients: coefficients,
+        constants: constants
+      };
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("Network error");
+
+        const result = await response.json();
+        alert("Ответ от сервера: " + JSON.stringify(result)); // или отобразить красиво
+      } catch (error) {
+        console.error("Ошибка при отправке:", error);
+        alert("Не удалось отправить данные на сервер.");
+      } 
+    }
+
   </script>
 
 
