@@ -113,7 +113,13 @@
 
       const row = document.createElement('div');
       row.classList.add('row');
-      for (let i = 0; i < inputColumnCount; i++) {
+
+      let columnCount = inputColumnCount;
+      if (rows.length >= 1) {
+        columnCount = rows[0].children.length;
+      }
+
+      for (let i = 0; i < columnCount; i++) {
         const input = document.createElement('input');
         input.type = 'number';
         input.step = 'any';
