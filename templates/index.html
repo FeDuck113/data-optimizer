@@ -5,8 +5,20 @@
     <title>Data optimizer</title>
 
     <style>
+      input {
+        width: 50px;
+      }
+
       .hidden {
         display: none;
+      }
+      .header-row {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .header-row div {
+        display: inline-block;
+        width: 58px;
       }
     </style>
 </head>
@@ -21,11 +33,14 @@
   <!-- Input data -->
   <div class="block">
     <h2>Входные данные</h2>
+    <div id="input-header-container" class="row header-row"></div>
     <div id="input-data-container"></div>
     <div>
       <button class="add-button" onclick="addInputRow(true)">+ row</button>
       <button class="remove-button" onclick="removeInputRow()">- row</button>
     </div>
+    <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+    <button onclick="document.getElementById('csv-upload').click()">Загрузить CSV</button>
   </div>
 
   <!-- Сoefficients -->
@@ -69,6 +84,21 @@
       delete_button.textContent = "-";
       delete_button.onclick = remove;
       return [add_button, delete_button];
+    }
+
+    function updateInputHeaders(columnCount) {
+      const headerContainer = document.getElementById('input-header-container');
+      headerContainer.innerHTML = '';
+
+      for (let i = 0; i < columnCount-1; i++) {
+        const header = document.createElement('div');
+        header.textContent = `x${i + 1}`;
+        headerContainer.appendChild(header);
+      }
+
+      const yHeader = document.createElement('div');
+      yHeader.textContent = 'y';
+      headerContainer.appendChild(yHeader);
     }
 
     function addInputRow(last=false) {
@@ -129,6 +159,8 @@
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
           row.appendChild(input);
+          updateInputHeaders(row.children.length);
+
           const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
           row.appendChild(add_button);
           row.appendChild(delete_button);
@@ -139,12 +171,13 @@
 
     function removeInputColumn() {
       const rows = document.querySelectorAll('#input-data-container .row');
-      if (rows.length <= 1 && rows[0].children.length <= 3 || rows[0].children.length <= 1) return;
+      if (rows.length <= 1 && rows[0].children.length <= 3 || rows[0].children.length <= 2) return;
       rows.forEach((row, index) => {
         if (index == rows.length - 1) {
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
           row.removeChild(row.lastElementChild);
+          updateInputHeaders(row.children.length);
           const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
           row.appendChild(add_button);
           row.appendChild(delete_button);
@@ -211,6 +244,7 @@
         else addCoefficient();
       }
       toggleBlocks();
+      updateInputHeaders(inputColumnCount);
     };
 
 
@@ -270,8 +304,49 @@
       } 
     }
 
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !file.name.endsWith(".csv")) {
+        alert("Пожалуйста, выберите CSV-файл.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const text = e.target.result;
+        const rows = text.trim().split("\n").map(row => row.split(";").map(Number));
+
+        inputColumnCount = Math.max(...rows.map(r => r.length));
+        inputRowCount = rows.length;
+
+        const container = document.getElementById('input-data-container');
+        container.innerHTML = "";
+
+        rows.forEach((values, rowIndex) => {
+          const row = document.createElement('div');
+          row.classList.add('row');
+
+          for (let i = 0; i < inputColumnCount; i++) {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.step = 'any';
+            input.value = values[i] ?? "";
+            row.appendChild(input);
+          }
+
+          if (rowIndex === rows.length - 1) {
+            updateInputHeaders(row.children.length);
+            const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
+            row.appendChild(add_button);
+            row.appendChild(delete_button);
+          }
+
+          container.appendChild(row);
+        });
+      };
+
+      reader.readAsText(file);
+    }
   </script>
-
-
 </body>
 </html>
