@@ -44,27 +44,37 @@
   <div class="block">
     <h2>Входные данные</h2>
 
+    <div>
+      <div class="table-wrapper-header">InputData</div>
+      <div class="table-wrapper">
+        <div class="table-section">
+          <div class="table-header">X header</div>
+          <div id="input-x-header" class="row header-row"></div>
+          <div id="input-x-data"></div>
+        </div>
+
+        <div class="table-section">
+          <div class="table-header">Y header</div>
+          <div id="input-y-header" class="row header-row"></div>
+          <div id="input-y-data"></div>
+        </div>
+      </div>
+
+      <div>
+        <button onclick="addInputRow('input-x-data', true); addInputRow('input-y-data', true);">+ row</button>
+        <button onclick="removeInputRow('input-x-data'); removeInputRow('input-y-data');">- row</button>
+      </div>
+      <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+      <button onclick="document.getElementById('csv-upload').click()">Upload CSV</button>
+    </div>
+    
+    <div class="table-wrapper-header">For prediction</div>
     <div class="table-wrapper">
       <div class="table-section">
-        <div class="table-header">X header</div>
-        <div id="input-x-header" class="row header-row"></div>
-        <div id="input-x-data"></div>
-      </div>
-
-      <div class="table-section">
-        <div class="table-header">Y header</div>
-        <div id="input-y-header" class="row header-row"></div>
-        <div id="input-y-data"></div>
+        <div id="input-predict-header" class="row header-row"></div>
+        <div id="input-predict-data"></div>
       </div>
     </div>
-
-    <div>
-      <button onclick="addInputRow('input-x-data', true); addInputRow('input-y-data', true);">+ row</button>
-      <button onclick="removeInputRow('input-x-data'); removeInputRow('input-y-data');">- row</button>
-    </div>
-
-    <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
-    <button onclick="document.getElementById('csv-upload').click()">Upload CSV</button>
   </div>
 
   <!-- Сoefficients -->
@@ -116,7 +126,7 @@
     }
 
     function updateInputHeaders(containerName, columnCount) {
-      const letter = containerName.includes("x") ? "x" : (containerName.includes("y") ? "y" : null);
+      const letter = (containerName.includes("x") || containerName.includes("predict")) ? "x" : (containerName.includes("y") ? "y" : null);
 
       const headerContainer = document.getElementById(containerName);
       headerContainer.innerHTML = '';
@@ -217,32 +227,76 @@
     }
 
 
-    function addCoefficient(cn, last = false) {
-      const row = document.getElementById('coefficients-row');
+
+    function addPredictData(containerName) {
+      const row = document.getElementById(containerName);
       const input = document.createElement('input');
       input.type = 'number';
       input.step = 'any';
 
-      if (last) {
+      if (row.children.length >= 3) {
         row.removeChild(row.lastElementChild);
         row.removeChild(row.lastElementChild);
         row.appendChild(input);
-        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, "coefficients-row");
+        updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+        const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
         row.appendChild(add_button);
         row.appendChild(delete_button);
       }
-      else row.appendChild(input);
+      else {
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+    }
+    function removePredictData(containerName){
+      const row = document.getElementById(containerName);
+      if (row.children.length-2 <= 1) return;
+
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+
+      const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
+      row.appendChild(add_button);
+      row.appendChild(delete_button);
+    }
+
+
+
+    function addCoefficient(containerName) {
+      const row = document.getElementById(containerName);
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = 'any';
+
+      if (row.children.length >= 3) {
+        row.removeChild(row.lastElementChild);
+        row.removeChild(row.lastElementChild);
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+      else {
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
 
     }
-    function removeCoefficient(cn) {
-      const row = document.getElementById('coefficients-row');
+    function removeCoefficient(containerName) {
+      const row = document.getElementById(containerName);
       if (row.children.length-2 <= 1) return;
 
       row.removeChild(row.lastElementChild);
       row.removeChild(row.lastElementChild);
       row.removeChild(row.lastElementChild);
 
-      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, "coefficients-row");
+      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
       row.appendChild(add_button);
       row.appendChild(delete_button);
     }
@@ -274,21 +328,27 @@
         else addInputRow("input-y-data", false);
       }
       for (let i = 0; i < inputColumnXCount; i++) {
-        if (i == inputColumnXCount - 1) addCoefficient(true);
-        else addCoefficient();
+        if (i == inputColumnXCount+1 || i == 0) addPredictData("input-predict-data", true);
+        else addPredictData("input-predict-data", false);
+      }
+
+      for (let i = 0; i < inputColumnXCount; i++) {
+        if (i == inputColumnXCount - 1) addCoefficient("coefficients-row");
+        else addCoefficient("coefficients-row");
       }
       toggleBlocks();
       updateInputHeaders("input-x-header", inputColumnXCount);
+      updateInputHeaders("input-predict-header", inputColumnYCount);
       updateInputHeaders("input-y-header", inputColumnYCount);
     };
 
 
     async function submitData() {
-      // 1. Mods
+      // Mods
       const calcCoef = document.getElementById('calc_coef').checked;
       const predictResult = document.getElementById('predict_result').checked;
 
-      // 2. Input X data
+      // Input X data
       const xRows = document.querySelectorAll("#input-x-data .row");
       const expX = [];
       xRows.forEach(row => {
@@ -296,7 +356,7 @@
         expX.push(values);
       });
 
-       // 3. Input Y data
+      // Input Y data
       const yRows = document.querySelectorAll("#input-y-data .row");
       const expY = [];
       yRows.forEach(row => {
@@ -304,11 +364,15 @@
         expY.push(values);
       });
 
-      // 3. Coefs
+      // Input predict data
+      const pInputs = Array.from(document.querySelectorAll("#input-predict-data input"));
+      const pred_data = pInputs.map(input => parseFloat(input.value));
+
+      // Coefs
       const coefInputs = Array.from(document.querySelectorAll("#coefficients-row input"));
       const coefficients = coefInputs.map(input => parseFloat(input.value));
 
-      // 4. Constns
+      // Constns
       const constants = {
         G_STANDART: parseFloat(document.getElementById('g_standart').value),
         F_STANDART: parseFloat(document.getElementById('f_standart').value),
@@ -328,7 +392,7 @@
             PARAMETERS: expX,
             RESULTS: expY
           },
-          PRED_DATA: []
+          PRED_DATA: pred_data
         },
         coefficients: coefficients,
         consts: constants
