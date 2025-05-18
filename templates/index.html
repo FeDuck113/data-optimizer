@@ -33,7 +33,7 @@
     </style>
 </head>
 <body>
-  <!-- Choose mode -->
+  <!-- Choosing mode -->
   <div class="block">
     <h2>Режим работы</h2>
     <label><input type="checkbox" id="calc_coef"> Вычислить коэффициенты</label><br>
@@ -73,7 +73,7 @@
     <div class="row" id="coefficients-row"></div>
   </div>
 
-  <!-- Блок 4: Постоянные -->
+  <!-- Consts -->
   <div class="block">
     <h2>Константы</h2>
     <button onclick="resetConstants()">Сбросить до стандартных значений</button><br>
@@ -89,7 +89,7 @@
     <button onclick="submitData()">Отправить на сервер</button>
   </div>
 
-<!-- Блок 5: Результат -->
+<!-- Results -->
   <div class="block hidden" id="result-block">
     <h2>Результат</h2>
     <p>Здесь будет отображён результат после выполнения предсказания.</p>
@@ -262,7 +262,7 @@
       document.getElementById('optimize_coef').checked = true;
     }
 
-    // Стартовые данные
+    
     window.onload = () => {
       const last = false;
       for (let i = 0; i < inputRowCount; i++) {
@@ -288,26 +288,34 @@
       const calcCoef = document.getElementById('calc_coef').checked;
       const predictResult = document.getElementById('predict_result').checked;
 
-      // 2. InputData
-      const inputData = [];
-      document.querySelectorAll('#input-data-container .row').forEach(row => { //TODO
-        const rowData = Array.from(row.querySelectorAll('input')).map(input => parseFloat(input.value));
-        inputData.push(rowData);
+      // 2. Input X data
+      const xRows = document.querySelectorAll("#input-x-data .row");
+      const expX = [];
+      xRows.forEach(row => {
+        const values = Array.from(row.querySelectorAll("input")).map(input => parseFloat(input.value));
+        expX.push(values);
+      });
+
+       // 3. Input Y data
+      const yRows = document.querySelectorAll("#input-y-data .row");
+      const expY = [];
+      yRows.forEach(row => {
+        const values = Array.from(row.querySelectorAll("input")).map(input => parseFloat(input.value));
+        expY.push(values);
       });
 
       // 3. Coefs
-      const coefRow = document.getElementById('coefficients-row');
-      const coefInputs = Array.from(coefRow.querySelectorAll('input'));
+      const coefInputs = Array.from(document.querySelectorAll("#coefficients-row input"));
       const coefficients = coefInputs.map(input => parseFloat(input.value));
 
       // 4. Constns
       const constants = {
-        g_standart: parseFloat(document.getElementById('g_standart').value),
-        f_standart: parseFloat(document.getElementById('f_standart').value),
-        t_test: parseFloat(document.getElementById('t_test').value),
-        coef_accuracy: parseInt(document.getElementById('coef_accuracy').value),
-        result_accuracy: parseInt(document.getElementById('result_accuracy').value),
-        optimize_coef: document.getElementById('optimize_coef').checked
+        G_STANDART: parseFloat(document.getElementById('g_standart').value),
+        F_STANDART: parseFloat(document.getElementById('f_standart').value),
+        T_TEST: parseFloat(document.getElementById('t_test').value),
+        COEF_ACCURACY: parseInt(document.getElementById('coef_accuracy').value),
+        RESULT_ACCURACY: parseInt(document.getElementById('result_accuracy').value),
+        OPTIMIZE_COEF: document.getElementById('optimize_coef').checked
       };
 
       const payload = {
@@ -315,9 +323,15 @@
           calc_coef: calcCoef,
           predict_result: predictResult
         },
-        input_data: inputData,
+        input_data: {
+          EXP_DATA: {
+            PARAMETERS: expX,
+            RESULTS: expY
+          },
+          PRED_DATA: []
+        },
         coefficients: coefficients,
-        constants: constants
+        consts: constants
       };
 
       try {
@@ -371,7 +385,6 @@
         inputColumnYCount = yIndices.length;
         inputRowCount = dataRows.length;
 
-        // Обновление заголовков
         updateInputHeaders("input-x-header", inputColumnXCount);
         updateInputHeaders("input-y-header", inputColumnYCount);
 
@@ -402,7 +415,6 @@
             yRow.appendChild(input);
           });
 
-          // Добавление кнопок на последнюю строку X
           if (rowIndex === dataRows.length - 1) {
             const [add_button_x, delete_button_x] = createColumnButtons(addInputColumn, removeInputColumn, "input-x-data");
             xRow.appendChild(add_button_x);
