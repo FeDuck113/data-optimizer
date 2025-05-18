@@ -332,51 +332,89 @@
         if (!response.ok) throw new Error("Network error");
 
         const result = await response.json();
-        alert("Ответ от сервера: " + JSON.stringify(result)); // или отобразить красиво
+        alert("Server response: " + JSON.stringify(result)); // или отобразить красиво
       } catch (error) {
-        console.error("Ошибка при отправке:", error);
-        alert("Не удалось отправить данные на сервер.");
+        console.error("Sending error:", error);
+        alert("Failed to send the data to the server");
       } 
     }
 
     function handleCSVUpload(event) {
       const file = event.target.files[0];
       if (!file || !file.name.endsWith(".csv")) {
-        alert("Пожалуйста, выберите CSV-файл.");
+        alert("Please select the csv file");
         return;
       }
 
       const reader = new FileReader();
       reader.onload = function (e) {
-        const text = e.target.result;
-        const rows = text.trim().split("\n").map(row => row.split(";").map(Number));
+        const text = e.target.result.trim();
+        const lines = text.split("\n");
 
-        inputColumnCount = Math.max(...rows.map(r => r.length));
-        inputRowCount = rows.length;
+        if (lines.length < 2) {
+          alert("CSV must contain a title and at least one line of data");
+          return;
+        }
 
-        const container = document.getElementById('input-data-container');
-        container.innerHTML = "";
+        const headers = lines[0].split(";").map(h => h.trim().toLowerCase());
+        const dataRows = lines.slice(1).map(line => line.split(";").map(Number));
 
-        rows.forEach((values, rowIndex) => {
-          const row = document.createElement('div');
-          row.classList.add('row');
+        const xIndices = [];
+        const yIndices = [];
 
-          for (let i = 0; i < inputColumnCount; i++) {
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = 'any';
-            input.value = values[i] ?? "";
-            row.appendChild(input);
+        headers.forEach((name, index) => {
+          if (name.startsWith("x")) xIndices.push(index);
+          else if (name.startsWith("y")) yIndices.push(index);
+        });
+
+        inputColumnXCount = xIndices.length;
+        inputColumnYCount = yIndices.length;
+        inputRowCount = dataRows.length;
+
+        // Обновление заголовков
+        updateInputHeaders("input-x-header", inputColumnXCount);
+        updateInputHeaders("input-y-header", inputColumnYCount);
+
+        const xContainer = document.getElementById("input-x-data");
+        const yContainer = document.getElementById("input-y-data");
+
+        xContainer.innerHTML = "";
+        yContainer.innerHTML = "";
+
+        dataRows.forEach((row, rowIndex) => {
+          const xRow = document.createElement("div");
+          xRow.className = "row";
+          xIndices.forEach(i => {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+            input.value = row[i] ?? "";
+            xRow.appendChild(input);
+          });
+
+          const yRow = document.createElement("div");
+          yRow.className = "row";
+          yIndices.forEach(i => {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+            input.value = row[i] ?? "";
+            yRow.appendChild(input);
+          });
+
+          // Добавление кнопок на последнюю строку X
+          if (rowIndex === dataRows.length - 1) {
+            const [add_button_x, delete_button_x] = createColumnButtons(addInputColumn, removeInputColumn, "input-x-data");
+            xRow.appendChild(add_button_x);
+            xRow.appendChild(delete_button_x);
+
+            const [add_button_y, delete_button_y] = createColumnButtons(addInputColumn, removeInputColumn, "input-y-data");
+            yRow.appendChild(add_button_y);
+            yRow.appendChild(delete_button_y);
           }
 
-          if (rowIndex === rows.length - 1) {
-            updateInputHeaders("input-x-header", row.children.length); //TODO
-            const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn);
-            row.appendChild(add_button);
-            row.appendChild(delete_button);
-          }
-
-          container.appendChild(row);
+          xContainer.appendChild(xRow);
+          yContainer.appendChild(yRow);
         });
       };
 
