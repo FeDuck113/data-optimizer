@@ -18,14 +18,18 @@ async def analyze(request: Request):
 
     calc_coef = data['mode']['calc_coef']
     predict_result = data['mode']['predict_result']
+    print(predict_result)
 
+    coef = []
+    result = None
     if calc_coef:
         coef = main.calc_coef(data)
+        data['coefficients'] = coef
     if predict_result:
         result = main.predict_result(data)
 
-    print('server',coef)
-    return 200
+    print({"coef": coef, "result": result})
+    return {"coef": coef, "result": result}
 
 
 if __name__ == "__main__":

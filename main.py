@@ -127,7 +127,7 @@ def linear_regression(data: list, coefficients: list) -> float:
     return result
 
 
-def calc_coef(config: dict):
+def calc_coef(config: dict) -> list:
     p = config['input_data']['EXP_DATA']['PARAMETERS']
     r = config['input_data']['EXP_DATA']['RESULTS']
 
@@ -144,8 +144,10 @@ def calc_coef(config: dict):
 
 def predict_result(config: dict) -> float:
     c = config['coefficients']
+    pr_data = config['input_data']['PRED_DATA']
+
     coef = eval(c) if isinstance(c, str) else c
-    PRED_DATA = eval(config['input_data']['PRED_DATA'])
+    PRED_DATA = eval(pr_data) if isinstance(pr_data, str) else pr_data
 
     if not coef:
         raise ValueError('Regression coefficients are missing')
@@ -154,7 +156,7 @@ def predict_result(config: dict) -> float:
 
     result = linear_regression(PRED_DATA, coef)
     result = round(result, config['consts']['RESULT_ACCURACY'])
-    print(result)
+    return result
 
 
 with open('config.json', encoding="utf-8") as f:

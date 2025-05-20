@@ -36,7 +36,7 @@
   <!-- Choosing mode -->
   <div class="block">
     <h2>Режим работы</h2>
-    <label><input type="checkbox" id="calc_coef"> Вычислить коэффициенты</label><br>
+    <label><input type="checkbox" id="calc_coef" onchange="toggleBlocks()"> Вычислить коэффициенты</label><br>
     <label><input type="checkbox" id="predict_result" onchange="toggleBlocks()"> Предсказать результат</label>
   </div>
 
@@ -44,7 +44,7 @@
   <div class="block">
     <h2>Входные данные</h2>
 
-    <div>
+    <div id="table-input-data">
       <div class="table-wrapper-header">InputData</div>
       <div class="table-wrapper">
         <div class="table-section">
@@ -68,18 +68,20 @@
       <button onclick="document.getElementById('csv-upload').click()">Upload CSV</button>
     </div>
     
-    <div class="table-wrapper-header">For prediction</div>
-    <div class="table-wrapper">
-      <div class="table-section">
-        <div id="input-predict-header" class="row header-row"></div>
-        <div id="input-predict-data"></div>
+    <div id="table-predict-data">
+      <div class="table-wrapper-header">For prediction</div>
+      <div class="table-wrapper">
+        <div class="table-section">
+          <div id="input-predict-header" class="row header-row"></div>
+          <div id="input-predict-data"></div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Сoefficients -->
   <div class="block" id="coefficients-block">
-    <h2>Коэффициенты регрессии</h2>
+    <div class="table-wrapper-header">Коэффициенты регрессии</div>
     <div class="row" id="coefficients-row"></div>
   </div>
 
@@ -100,9 +102,12 @@
   </div>
 
 <!-- Results -->
-  <div class="block hidden" id="result-block">
+  <div class="block" id="result-block">
     <h2>Результат</h2>
-    <p>Здесь будет отображён результат после выполнения предсказания.</p>
+    <p id="regression-equation"></p>
+    <button id="copy-coef-button" class="hidden" onclick="copyCoefficientsToInput()">Скопировать в поле ввода</button>
+
+    <p id="predicted-result"></p>
   </div>
 
 
@@ -302,9 +307,14 @@
     }
 
     function toggleBlocks() {
+      const calcCoefChecked = document.getElementById('calc_coef').checked;
       const predictChecked = document.getElementById('predict_result').checked;
-      document.getElementById('coefficients-block').classList.toggle('hidden', !predictChecked);
-      document.getElementById('result-block').classList.toggle('hidden', !predictChecked);
+
+      document.getElementById('table-input-data').classList.toggle('hidden', !calcCoefChecked);
+      
+      document.getElementById('table-predict-data').classList.toggle('hidden', !predictChecked);
+      document.getElementById('coefficients-block').classList.toggle('hidden', !predictChecked || predictChecked===calcCoefChecked);
+      // document.getElementById('result-block').classList.toggle('hidden', !predictChecked);
     }
 
     function resetConstants() {
@@ -409,13 +419,62 @@
 
         if (!response.ok) throw new Error("Network error");
 
+        const calcCoef = document.getElementById('calc_coef').checked;
+        const predict = document.getElementById('predict_result').checked;
+
+        document.getElementById("copy-coef-button").classList.remove("hidden");
         const result = await response.json();
-        alert("Server response: " + JSON.stringify(result)); // или отобразить красиво
+
+        if (calcCoef) {
+          const coef = result.coef;
+          window.lastCoefficients = coef;
+
+          let equation = `y = ${coef[0].toFixed(2)}`;
+          for (let i = 1; i < coef.length; i++) {
+            const sign = coef[i] >= 0 ? "+" : "−";
+            equation += ` ${sign} ${Math.abs(coef[i]).toFixed(2)} x${i}`;
+          }
+
+          document.getElementById("regression-equation").textContent = equation;
+        }
+        
+        if (predict) {
+          const resultValue = result.result;  
+          document.getElementById("predicted-result").textContent = resultValue;
+        }
+        
       } catch (error) {
         console.error("Sending error:", error);
         alert("Failed to send the data to the server");
       } 
     }
+
+
+    function copyCoefficientsToInput() {
+      if (!window.lastCoefficients) return;
+
+      const calc = document.getElementById('calc_coef');
+      const predict = document.getElementById('predict_result');
+      calc.checked = false;
+      predict.checked = true;
+      toggleBlocks();
+
+      const coefRow = document.getElementById("coefficients-row");
+      coefRow.innerHTML = "";
+
+      window.lastCoefficients.forEach(value => {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "any";
+        input.value = value.toFixed(6);
+        coefRow.appendChild(input);
+      });
+
+      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient);
+      coefRow.appendChild(add_button);
+      coefRow.appendChild(delete_button);
+    }
+
 
     function handleCSVUpload(event) {
       const file = event.target.files[0];
