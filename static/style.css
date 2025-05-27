@@ -1,0 +1,147 @@
+/* Общие стили */
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f6f9;
+  color: #333;
+  margin: 0;
+  padding: 20px;
+}
+
+.header-row {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.header-row div {
+    display: inline-block;
+    width: 72px;
+}    
+
+h2 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.block {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  display: block;
+}
+
+/* Кнопки */
+button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 5px 0;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Табличные блоки */
+.table-block {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+}
+
+.table-wrapper-header {
+  font-weight: bold;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #34495e;
+}
+
+.table-wrapper {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.table-section {
+  flex: 1;
+  min-width: 250px;
+}
+
+.table-header {
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: #2c3e50;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.row input,
+#input-predict-data input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+#input-x-data input,
+#input-y-data input,
+#input-predict-data input {
+  max-width: 50px;
+}
+
+/* Блок кнопок под таблицами */
+.button-block {
+  margin-top: 10px;
+}
+
+/* Для скрытия блоков */
+.hidden {
+  display: none !important;
+}
+
+/* Кнопки внутри строк */
+.inline-add-button {
+  background-color: #2ecc71;
+  padding: 6px 10px;
+}
+
+.inline-add-button:hover {
+  background-color: #27ae60;
+}
+
+/* Специальный стиль для коэффициентов */
+#coefficients-row input {
+    max-width: 15em;
+}
+
+#reset-button {
+    margin-bottom: 15px;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .table-wrapper {
+    flex-direction: column;
+  }
+
+  .row {
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Data optimizer</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Choosing mode -->
+  <div class="block">
+    <h2>Working mode</h2>
+    <label><input type="checkbox" id="calc_coef" onchange="toggleBlocks()"> Calculate coefficients</label><br>
+    <label><input type="checkbox" id="predict_result" onchange="toggleBlocks()"> Predict result</label>
+  </div>
+
+  <!-- Input data -->
+  <div class="block">
+    <h2>Input data</h2>
+
+    <div id="table-input-data" class="table-block">
+      <div class="table-wrapper-header">Experimental data</div>
+      <div class="table-wrapper">
+        <div class="table-section">
+          <div id="input-x-header" class="row header-row"></div>
+          <div id="input-x-data"></div>
+        </div>
+
+        <div class="table-section">
+          <div id="input-y-header" class="row header-row"></div>
+          <div id="input-y-data"></div>
+        </div>
+      </div>
+
+      <div class="button-block">
+        <button onclick="addInputRow('input-x-data', true); addInputRow('input-y-data', true);">+ row</button>
+        <button onclick="removeInputRow('input-x-data'); removeInputRow('input-y-data');">- row</button>
+      </div>
+      <input type="file" id="csv-upload" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)">
+      <button onclick="document.getElementById('csv-upload').click()">Upload CSV</button>
+    </div>
+    
+    <div id="table-predict-data" class="table-block">
+      <div class="table-wrapper-header">Prediction parameters</div>
+      <div class="table-wrapper">
+        <div class="table-section">
+          <div id="input-predict-header" class="row header-row"></div>
+          <div id="input-predict-data" class="row"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-block" id="coefficients-block">
+      <div class="table-wrapper-header">Regression coefficients</div>
+      <div class="row" id="coefficients-row"></div>
+    </div>
+  </div>
+
+
+  <!-- Consts -->
+  <div class="block">
+    <h2>Constants</h2>
+    <button id="reset-button" onclick="resetConstants()">Reset to default values</button><br>
+    <label>G_STANDART: <input type="number" step="0.01" id="g_standart" value="0.33"></label><br>
+    <label>F_STANDART: <input type="number" step="0.01" id="f_standart" value="3.63"></label><br>
+    <label>T_TEST: <input type="number" step="0.001" id="t_test" value="5.841"></label><br>
+    <label>COEF_ACCURACY: <input type="number" id="coef_accuracy" value="6"></label><br>
+    <label>RESULT_ACCURACY: <input type="number" id="result_accuracy" value="2"></label><br>
+    <label><input type="checkbox" id="optimize_coef" checked> Optimize coefficients</label>
+  </div>
+
+  <!-- Results -->
+  <div class="block" id="result-block">
+    <h2>Result</h2>
+    <p id="regression-equation"></p>
+    <button id="copy-coef-button" class="hidden" onclick="copyCoefficientsToInput()">Copy to input</button>
+
+    <p id="predicted-result"></p>
+  </div>
+
+  <div class="block">
+    <button onclick="submitData()">Submit data</button>
+  </div>
+
+  <script>
+    let inputColumnXCount = 4;
+    let inputColumnYCount = 4;
+    let inputRowCount = 2;
+
+    function createColumnButtons(add, remove, containerName) {
+      const add_button = document.createElement('button');
+      add_button.classList.add('inline-add-button');
+      add_button.textContent = "+";
+      add_button.onclick = function() {
+        add(containerName);
+      };
+      const delete_button = document.createElement('button');
+      delete_button.textContent = "-";
+      delete_button.onclick = function() {
+        remove(containerName);
+      };
+      return [add_button, delete_button];
+    }
+
+    function updateInputHeaders(containerName, columnCount) {
+      const letter = (containerName.includes("x") || containerName.includes("predict")) ? "x" : (containerName.includes("y") ? "y" : null);
+
+      const headerContainer = document.getElementById(containerName);
+      headerContainer.innerHTML = '';
+
+      for (let i = 0; i < columnCount; i++) {
+        const header = document.createElement('div');
+        header.textContent = `${letter}${i + 1}`;
+        headerContainer.appendChild(header);
+      }
+    }
+
+    function addInputRow(containerName, last=false) {
+      const container = document.getElementById(containerName);
+      const rows = container.querySelectorAll('.row');
+      
+      if (rows.length >= 1 & last) {
+        const last_row = rows[rows.length - 1];
+        last_row.removeChild(last_row.lastElementChild);
+        last_row.removeChild(last_row.lastElementChild);
+      }
+
+      const row = document.createElement('div');
+      row.classList.add('row');
+
+      let columnCount = containerName.includes("x") ? inputColumnXCount : (containerName.includes("y") ? inputColumnYCount : null);
+      if (rows.length >= 1) {
+        columnCount = rows[0].children.length;
+      }
+
+      for (let i = 0; i < columnCount; i++) {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+        row.appendChild(input);
+      }
+
+      if (last) {
+        const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      } 
+
+      container.appendChild(row);
+    }
+
+    function removeInputRow(containerName) {
+      const container = document.getElementById(containerName);
+      const rows = container.querySelectorAll('.row');
+      if (rows.length <= 1) return;
+
+      container.removeChild(container.lastElementChild);
+
+      last_row = container.lastElementChild;
+      const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn, containerName);
+      last_row.appendChild(add_button);
+      last_row.appendChild(delete_button);
+    }
+
+
+    function addInputColumn(containerName) {
+      const container = document.getElementById(containerName);
+      const rows = container.querySelectorAll('.row');
+      rows.forEach((row, index) => {
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = 'any';
+
+        if (index == rows.length - 1) {
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          row.appendChild(input);
+          updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+
+          const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn, containerName);
+          row.appendChild(add_button);
+          row.appendChild(delete_button);
+        }
+        else row.appendChild(input);
+      });
+    }
+
+    function removeInputColumn(containerName) {
+      const container = document.getElementById(containerName);
+      const rows = container.querySelectorAll('.row');
+      if (rows.length <= 1 && rows[0].children.length <= 3 || rows[0].children.length <= 1) return;
+      rows.forEach((row, index) => {
+        if (index == rows.length - 1) {
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          row.removeChild(row.lastElementChild);
+          updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+          const [add_button, delete_button] = createColumnButtons(addInputColumn, removeInputColumn, containerName);
+          row.appendChild(add_button);
+          row.appendChild(delete_button);
+        }
+        else row.removeChild(row.lastElementChild);
+      });
+    }
+
+
+
+    function addPredictData(containerName) {
+      const row = document.getElementById(containerName);
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = 'any';
+
+      if (row.children.length >= 3) {
+        row.removeChild(row.lastElementChild);
+        row.removeChild(row.lastElementChild);
+        row.appendChild(input);
+        updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+        const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+      else {
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+    }
+    function removePredictData(containerName){
+      const row = document.getElementById(containerName);
+      if (row.children.length-2 <= 1) return;
+
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      updateInputHeaders(containerName.replace("data", "header"), row.children.length);
+
+      const [add_button, delete_button] = createColumnButtons(addPredictData, removePredictData, containerName);
+      row.appendChild(add_button);
+      row.appendChild(delete_button);
+    }
+
+
+
+    function addCoefficient(containerName) {
+      const row = document.getElementById(containerName);
+      const input = document.createElement('input');
+      input.classList.add('coef-input');
+      input.type = 'number';
+      input.step = 'any';
+
+      if (row.children.length >= 3) {
+        row.removeChild(row.lastElementChild);
+        row.removeChild(row.lastElementChild);
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+      else {
+        row.appendChild(input);
+        const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
+        row.appendChild(add_button);
+        row.appendChild(delete_button);
+      }
+
+    }
+    function removeCoefficient(containerName) {
+      const row = document.getElementById(containerName);
+      if (row.children.length-2 <= 1) return;
+
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+      row.removeChild(row.lastElementChild);
+
+      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient, containerName);
+      row.appendChild(add_button);
+      row.appendChild(delete_button);
+    }
+
+    function toggleBlocks() {
+      const calcCoefChecked = document.getElementById('calc_coef').checked;
+      const predictChecked = document.getElementById('predict_result').checked;
+
+      document.getElementById('table-input-data').classList.toggle('hidden', !calcCoefChecked);
+      
+      document.getElementById('table-predict-data').classList.toggle('hidden', !predictChecked);
+      document.getElementById('coefficients-block').classList.toggle('hidden', !predictChecked || predictChecked===calcCoefChecked);
+      // document.getElementById('result-block').classList.toggle('hidden', !predictChecked);
+    }
+
+    function resetConstants() {
+      document.getElementById('g_standart').value = 0.33;
+      document.getElementById('f_standart').value = 3.63;
+      document.getElementById('t_test').value = 5.841;
+      document.getElementById('coef_accuracy').value = 6;
+      document.getElementById('result_accuracy').value = 2;
+      document.getElementById('optimize_coef').checked = true;
+    }
+
+    
+    window.onload = () => {
+      const last = false;
+      for (let i = 0; i < inputRowCount; i++) {
+        if (i == inputRowCount-1 || i == 0) addInputRow("input-x-data", true);
+        else addInputRow("input-x-data", false);
+      }
+      for (let i = 0; i < inputRowCount; i++) {
+        if (i == inputRowCount-1 || i == 0) addInputRow("input-y-data", true);
+        else addInputRow("input-y-data", false);
+      }
+      for (let i = 0; i < inputColumnXCount; i++) {
+        if (i == inputColumnXCount+1 || i == 0) addPredictData("input-predict-data", true);
+        else addPredictData("input-predict-data", false);
+      }
+
+      for (let i = 0; i < inputColumnXCount; i++) {
+        if (i == inputColumnXCount - 1) addCoefficient("coefficients-row");
+        else addCoefficient("coefficients-row");
+      }
+      toggleBlocks();
+      updateInputHeaders("input-x-header", inputColumnXCount);
+      updateInputHeaders("input-predict-header", inputColumnYCount);
+      updateInputHeaders("input-y-header", inputColumnYCount);
+    };
+
+
+    async function submitData() {
+      // Mods
+      const calcCoef = document.getElementById('calc_coef').checked;
+      const predictResult = document.getElementById('predict_result').checked;
+
+      // Input X data
+      const xRows = document.querySelectorAll("#input-x-data .row");
+      const expX = [];
+      xRows.forEach(row => {
+        const values = Array.from(row.querySelectorAll("input")).map(input => parseFloat(input.value));
+        expX.push(values);
+      });
+
+      // Input Y data
+      const yRows = document.querySelectorAll("#input-y-data .row");
+      const expY = [];
+      yRows.forEach(row => {
+        const values = Array.from(row.querySelectorAll("input")).map(input => parseFloat(input.value));
+        expY.push(values);
+      });
+
+      // Input predict data
+      const pInputs = Array.from(document.querySelectorAll("#input-predict-data input"));
+      const pred_data = pInputs.map(input => parseFloat(input.value));
+
+      // Coefs
+      const coefInputs = Array.from(document.querySelectorAll("#coefficients-row input"));
+      const coefficients = coefInputs.map(input => parseFloat(input.value));
+
+      // Constns
+      const constants = {
+        G_STANDART: parseFloat(document.getElementById('g_standart').value),
+        F_STANDART: parseFloat(document.getElementById('f_standart').value),
+        T_TEST: parseFloat(document.getElementById('t_test').value),
+        COEF_ACCURACY: parseInt(document.getElementById('coef_accuracy').value),
+        RESULT_ACCURACY: parseInt(document.getElementById('result_accuracy').value),
+        OPTIMIZE_COEF: document.getElementById('optimize_coef').checked
+      };
+
+      const payload = {
+        mode: {
+          calc_coef: calcCoef,
+          predict_result: predictResult
+        },
+        input_data: {
+          EXP_DATA: {
+            PARAMETERS: expX,
+            RESULTS: expY
+          },
+          PRED_DATA: pred_data
+        },
+        coefficients: coefficients,
+        consts: constants
+      };
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error("Network error");
+
+        const calcCoef = document.getElementById('calc_coef').checked;
+        const predict = document.getElementById('predict_result').checked;
+
+        document.getElementById("copy-coef-button").classList.remove("hidden");
+        const result = await response.json();
+
+        if (calcCoef) {
+          const coef = result.coef;
+          window.lastCoefficients = coef;
+
+          let equation = `y = ${coef[0].toFixed(2)}`;
+          for (let i = 1; i < coef.length; i++) {
+            const sign = coef[i] >= 0 ? "+" : "−";
+            equation += ` ${sign} ${Math.abs(coef[i]).toFixed(2)}x${i}`;
+          }
+
+          document.getElementById("regression-equation").textContent = equation;
+        }
+        
+        if (predict) {
+          const resultValue = result.result;  
+          document.getElementById("predicted-result").textContent = resultValue;
+        }
+        
+      } catch (error) {
+        console.error("Sending error:", error);
+        alert("Failed to send the data to the server");
+      } 
+    }
+
+
+    function copyCoefficientsToInput() {
+      if (!window.lastCoefficients) return;
+
+      const calc = document.getElementById('calc_coef');
+      const predict = document.getElementById('predict_result');
+      calc.checked = false;
+      predict.checked = true;
+      toggleBlocks();
+
+      const coefRow = document.getElementById("coefficients-row");
+      coefRow.innerHTML = "";
+
+      window.lastCoefficients.forEach(value => {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "any";
+        input.value = value.toFixed(6);
+        coefRow.appendChild(input);
+      });
+
+      const [add_button, delete_button] = createColumnButtons(addCoefficient, removeCoefficient);
+      coefRow.appendChild(add_button);
+      coefRow.appendChild(delete_button);
+    }
+
+
+    function handleCSVUpload(event) {
+      const file = event.target.files[0];
+      if (!file || !file.name.endsWith(".csv")) {
+        alert("Please select the csv file");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const text = e.target.result.trim();
+        const lines = text.split("\n");
+
+        if (lines.length < 2) {
+          alert("CSV must contain a title and at least one line of data");
+          return;
+        }
+
+        const headers = lines[0].split(";").map(h => h.trim().toLowerCase());
+        const dataRows = lines.slice(1).map(line => line.split(";").map(Number));
+
+        const xIndices = [];
+        const yIndices = [];
+
+        headers.forEach((name, index) => {
+          if (name.startsWith("x")) xIndices.push(index);
+          else if (name.startsWith("y")) yIndices.push(index);
+        });
+
+        inputColumnXCount = xIndices.length;
+        inputColumnYCount = yIndices.length;
+        inputRowCount = dataRows.length;
+
+        updateInputHeaders("input-x-header", inputColumnXCount);
+        updateInputHeaders("input-y-header", inputColumnYCount);
+
+        const xContainer = document.getElementById("input-x-data");
+        const yContainer = document.getElementById("input-y-data");
+
+        xContainer.innerHTML = "";
+        yContainer.innerHTML = "";
+
+        dataRows.forEach((row, rowIndex) => {
+          const xRow = document.createElement("div");
+          xRow.className = "row";
+          xIndices.forEach(i => {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+            input.value = row[i] ?? "";
+            xRow.appendChild(input);
+          });
+
+          const yRow = document.createElement("div");
+          yRow.className = "row";
+          yIndices.forEach(i => {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+            input.value = row[i] ?? "";
+            yRow.appendChild(input);
+          });
+
+          if (rowIndex === dataRows.length - 1) {
+            const [add_button_x, delete_button_x] = createColumnButtons(addInputColumn, removeInputColumn, "input-x-data");
+            xRow.appendChild(add_button_x);
+            xRow.appendChild(delete_button_x);
+
+            const [add_button_y, delete_button_y] = createColumnButtons(addInputColumn, removeInputColumn, "input-y-data");
+            yRow.appendChild(add_button_y);
+            yRow.appendChild(delete_button_y);
+          }
+
+          xContainer.appendChild(xRow);
+          yContainer.appendChild(yRow);
+        });
+      };
+
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>

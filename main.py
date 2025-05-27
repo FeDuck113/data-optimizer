@@ -22,7 +22,7 @@ def generate_products(data: list) -> dict:
 
 
 # calculation of variances and mean values
-def calculate_variance(PARAMS: list, RESULTS: list) -> (list, list):
+def calculate_variance(PARAMS: list, RESULTS: list) -> list:
     n_exp = len(PARAMS)
 
     variances = list()
@@ -79,7 +79,6 @@ def optimize_coefficients(coef: list, exp_variance: float, T_TEST: float, n_exp:
     print('interval', confidence_interval)
     for i in range(len(coef)):
         if -1 * confidence_interval < coef[i] < confidence_interval:
-            print('u')
             coef[i] = 0
     return coef
 
@@ -118,13 +117,45 @@ def calculate_coefficients(PARAMS: list, RESULTS: list, G_STANDART: float, F_STA
 
 
 def linear_regression(data: list, coefficients: list) -> float:
-    products_num = generate_products(PRED_DATA)     # getting all products of parameters
+    products_num = generate_products(data)     # getting all products of parameters
     for i in products_num:                          # adding products of parameters
-        PRED_DATA.insert(len(PRED_DATA) - 1, products_num[i])
+        data.insert(len(data) - 1, products_num[i])
 
     result = coefficients[0]                        # start with a constant value
     for i in range(len(data)):
         result += coefficients[i + 1] * data[i]     # adding the remaining parameters
+    return result
+
+
+def calc_coef(config: dict) -> list:
+    p = config['input_data']['EXP_DATA']['PARAMETERS']
+    r = config['input_data']['EXP_DATA']['RESULTS']
+
+    PARAMS = eval(p) if isinstance(p, str) else p
+    RESULTS = eval(r) if isinstance(p, str) else r
+
+    if not PARAMS or not RESULTS:
+        raise ValueError('Experimental data are missing')
+
+    consts = config['consts']
+    coef = calculate_coefficients(PARAMS, RESULTS, consts['G_STANDART'], consts['F_STANDART'], consts['OPTIMIZE_COEF'],
+                                  consts['T_TEST'], consts['COEF_ACCURACY'])
+    return coef
+
+def predict_result(config: dict) -> float:
+    c = config['coefficients']
+    pr_data = config['input_data']['PRED_DATA']
+
+    coef = eval(c) if isinstance(c, str) else c
+    PRED_DATA = eval(pr_data) if isinstance(pr_data, str) else pr_data
+
+    if not coef:
+        raise ValueError('Regression coefficients are missing')
+    if not PRED_DATA:
+        raise ValueError('Prediction data are missing')
+
+    result = linear_regression(PRED_DATA, coef)
+    result = round(result, config['consts']['RESULT_ACCURACY'])
     return result
 
 
@@ -135,32 +166,12 @@ with open('config.json', encoding="utf-8") as f:
     PREDICT_RESULT = config['operating_mode']['PREDICT_RESULT']
 
 if CALCULATE_COEFFICIENTS:
-    PARAMS = eval(config['input_data']['EXP_DATA']['PARAMETERS'])
-    RESULTS = eval(config['input_data']['EXP_DATA']['RESULTS'])
-
-    if not PARAMS or not RESULTS:
-        raise ValueError('Experimental data are missing')
-
-    consts = config['consts']
-    coef = calculate_coefficients(PARAMS, RESULTS, consts['G_STANDART'], consts['F_STANDART'], consts['OPTIMIZE_COEF'],
-                                  consts['T_TEST'], consts['COEF_ACCURACY'])
-
+    coef = calc_coef(config)
     with open('config.json', 'r+', encoding='utf-8') as f:
         config['coefficients'] = str(coef)
         f.seek(0)
         json.dump(config, f, indent=4)
         f.truncate()
 
-
 if PREDICT_RESULT:
-    coef = eval(config['coefficients'])
-    PRED_DATA = eval(config['input_data']['PRED_DATA'])
-
-    if not coef:
-        raise ValueError('Regression coefficients are missing')
-    if not PRED_DATA:
-        raise ValueError('Prediction data are missing')
-
-    result = linear_regression(PRED_DATA, coef)
-    result = round(result, config['consts']['RESULT_ACCURACY'])
-    print(result)
+    predict_result(config)
