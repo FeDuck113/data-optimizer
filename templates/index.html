@@ -3,34 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Data optimizer</title>
-
-    <style>
-      .table-wrapper {
-        display: flex;
-        gap: 32px;
-        margin-bottom: 1em;
-      }
-      .table-section {
-        display: flex;
-        flex-direction: column;
-      }
-
-      input {
-        width: 50px;
-      }
-
-      .hidden {
-        display: none;
-      }
-      .header-row {
-        font-weight: bold;
-        margin-bottom: 5px;
-      }
-      .header-row div {
-        display: inline-block;
-        width: 58px;
-      }
-    </style>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
   <!-- Choosing mode -->
@@ -44,7 +17,7 @@
   <div class="block">
     <h2>Входные данные</h2>
 
-    <div id="table-input-data">
+    <div id="table-input-data" class="table-block">
       <div class="table-wrapper-header">InputData</div>
       <div class="table-wrapper">
         <div class="table-section">
@@ -60,7 +33,7 @@
         </div>
       </div>
 
-      <div>
+      <div class="button-block">
         <button onclick="addInputRow('input-x-data', true); addInputRow('input-y-data', true);">+ row</button>
         <button onclick="removeInputRow('input-x-data'); removeInputRow('input-y-data');">- row</button>
       </div>
@@ -68,7 +41,7 @@
       <button onclick="document.getElementById('csv-upload').click()">Upload CSV</button>
     </div>
     
-    <div id="table-predict-data">
+    <div id="table-predict-data" class="table-block">
       <div class="table-wrapper-header">For prediction</div>
       <div class="table-wrapper">
         <div class="table-section">
@@ -77,13 +50,13 @@
         </div>
       </div>
     </div>
+
+    <div class="table-block" id="coefficients-block">
+      <div class="table-wrapper-header">Коэффициенты регрессии</div>
+      <div class="row" id="coefficients-row"></div>
+    </div>
   </div>
 
-  <!-- Сoefficients -->
-  <div class="block" id="coefficients-block">
-    <div class="table-wrapper-header">Коэффициенты регрессии</div>
-    <div class="row" id="coefficients-row"></div>
-  </div>
 
   <!-- Consts -->
   <div class="block">
@@ -97,11 +70,7 @@
     <label><input type="checkbox" id="optimize_coef" checked> Оптимизировать коэффициенты</label>
   </div>
 
-  <div class="block">
-    <button onclick="submitData()">Отправить на сервер</button>
-  </div>
-
-<!-- Results -->
+  <!-- Results -->
   <div class="block" id="result-block">
     <h2>Результат</h2>
     <p id="regression-equation"></p>
@@ -110,6 +79,9 @@
     <p id="predicted-result"></p>
   </div>
 
+  <div class="block">
+    <button onclick="submitData()">Отправить на сервер</button>
+  </div>
 
   <script>
     let inputColumnXCount = 4;
@@ -118,6 +90,7 @@
 
     function createColumnButtons(add, remove, containerName) {
       const add_button = document.createElement('button');
+      add_button.classList.add('inline-add-button');
       add_button.textContent = "+";
       add_button.onclick = function() {
         add(containerName);
@@ -274,6 +247,7 @@
     function addCoefficient(containerName) {
       const row = document.getElementById(containerName);
       const input = document.createElement('input');
+      input.classList.add('coef-input');
       input.type = 'number';
       input.step = 'any';
 

@@ -1,0 +1,46 @@
+.hidden {
+    display: none;
+}
+
+input {
+    width: 50px;
+}
+.coef-input {
+    width: 90px;
+}
+
+.table-wrapper {
+    display: flex;
+    gap: 32px;
+}
+.table-section {
+    display: flex;
+    flex-direction: column;
+}
+.header-row {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.header-row div {
+    display: inline-block;
+    width: 58px;
+}      
+
+.table-block {
+    margin-bottom: 1em;
+    margin-left: 1em;
+}
+.table-wrapper-header {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.table-header {
+    font-weight: bold;
+}
+.button-block {
+    margin-top: 5px;
+}
+.inline-add-button {
+    margin-left: 5px;
+}
