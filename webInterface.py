@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -35,4 +35,4 @@ async def analyze(request: Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run("webInterface:app", reload=True)
+    uvicorn.run("webInterface:app", host="0.0.0.0", port=10000, reload=True)
