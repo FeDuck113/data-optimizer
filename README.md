@@ -1,7 +1,9 @@
 ![dataOptimizer](https://github.com/FeDuck113/data-optimizer/assets/71590602/f495b98b-cba4-4552-b1f9-64a0ec79b854)
 # Data optimizer
 
-This program is designed for the analysis of experimental data, calculation of regression coefficients, and prediction of experiment results  
+This program is designed for the analysis of experimental data, calculation of regression coefficients, and prediction of experiment results
+
+🟢 **Try it online**: [data-optimizer.onrender.com](https://data-optimizer.onrender.com)
   
 The program is developed in Python without the use of third-party libraries except for the standard json library for working with JSON files. It includes methods for statistical data analysis, tests for homogeneity of variance and model adequacy and linear regression
 
@@ -66,7 +68,7 @@ The array contains the linear regression coefficients, which are recorded here a
 ```
 ## Add-ons
 ### Equation generator
-Can write a linear regression equation. For this you need to have the coefficients and "PRED_DATA" to determine the number of parameters (x).
+Can write a linear regression equation. For this, you must have the coefficients and "PRED_DATA" to determine the number of parameters (x).
 The coefficients equal to zero are not taken into account
 ```
 y = 0.729375+0.116875x1x2+0.068542x1x3-0.123542x1x4-0.027292x2x3+0.093958x2x4+0.035208x3x4+0.043125x1x2x3-0.021875x1x3x4-0.029375x2x3x4
